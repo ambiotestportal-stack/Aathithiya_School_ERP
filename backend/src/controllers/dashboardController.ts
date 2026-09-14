@@ -6,31 +6,62 @@ import StudentProfileModel from '../models/StudentProfile';
 import StaffProfileModel from '../models/StaffProfile';
 import CalendarEventModel from '../models/CalendarEvent';
 import NoticeModel from '../models/Notice';
-import ClassModel from '../models/Class';
 import TransportModel from '../models/Transport';
-import ExamResultModel from '../models/ExamResult';
 
 export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    // 1. TOTAL COUNTS
-    const totalStudents = await StudentProfileModel.countDocuments({ isDeleted: { $ne: true } });
-    const totalTeachers = await StaffProfileModel.countDocuments({ isDeleted: { $ne: true } });
-    const totalParents = await UserModel.countDocuments({ role: UserRole.PARENT, isDeleted: { $ne: true } });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const currentYear = today.getFullYear();
 
-    // 2. REVENUE & MONTHLY FEE COLLECTION
-    const allFees = await FeeRecordModel.find().lean();
+    // PARALLELIZED DATABASE QUERIES VIA PROMISE.ALL FOR MAXIMUM FAST PERFORMANCE
+    const [
+      totalStudents,
+      totalTeachers,
+      totalParents,
+      allFees,
+      feeRecordsThisYear,
+      attendances,
+      studentProfilesAll,
+      staffProfilesAll,
+      eventsFromDb,
+      noticesFromDb,
+      transportFromDb,
+      recentFeeRecordsDb
+    ] = await Promise.all([
+      StudentProfileModel.countDocuments({ isDeleted: { $ne: true } }),
+      StaffProfileModel.countDocuments({ isDeleted: { $ne: true } }),
+      UserModel.countDocuments({ role: UserRole.PARENT, isDeleted: { $ne: true } }),
+      FeeRecordModel.find().lean(),
+      FeeRecordModel.find({
+        dueDate: {
+          $gte: new Date(currentYear, 0, 1),
+          $lt: new Date(currentYear + 1, 0, 1)
+        }
+      }).lean(),
+      AttendanceModel.find({ date: { $gte: today, $lt: tomorrow } }).populate('classId').lean(),
+      StudentProfileModel.find({ isDeleted: { $ne: true } }).populate('enrolledClass').lean(),
+      StaffProfileModel.find({ isDeleted: { $ne: true } }).populate('user', 'name email').lean(),
+      CalendarEventModel.find({ startDate: { $gte: today } }).sort({ startDate: 1 }).limit(4).lean(),
+      NoticeModel.find().sort({ createdAt: -1 }).limit(4).lean(),
+      TransportModel.find().lean(),
+      FeeRecordModel.find()
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate({
+          path: 'student',
+          populate: { path: 'user', select: 'name' }
+        })
+        .lean()
+    ]);
+
+    // 1. REVENUE & MONTHLY FEE COLLECTION
     const revenue = allFees.reduce((sum, fee: any) => {
       const paid = fee.paidAmount !== undefined ? Number(fee.paidAmount) : (fee.status === 'Paid' ? Number(fee.amount) : 0);
       return sum + (paid || 0);
     }, 0);
-
-    const currentYear = new Date().getFullYear();
-    const feeRecordsThisYear = await FeeRecordModel.find({
-      dueDate: {
-        $gte: new Date(currentYear, 0, 1),
-        $lt: new Date(currentYear + 1, 0, 1)
-      }
-    }).lean();
 
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const revenueData = months.map(month => ({ label: month, value: 0, secondaryValue: 0, color: 'bg-emerald-500' }));
@@ -45,16 +76,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       }
     });
 
-    // 3. ATTENDANCE DONUT & CLASS ATTENDANCE
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const attendances = await AttendanceModel.find({
-      date: { $gte: today, $lt: tomorrow }
-    }).populate('classId').lean();
-
+    // 2. ATTENDANCE DONUT & CLASS ATTENDANCE
     let present = 0;
     let absent = 0;
     let onLeave = 0;
@@ -94,15 +116,12 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       return { grade: g, percentage };
     });
 
-    // 4. TODAY'S BIRTHDAYS
+    // 3. TODAY'S BIRTHDAYS
     const todayMonth = today.getMonth() + 1;
     const todayDay = today.getDate();
 
-    const studentBirthdays = await StudentProfileModel.find().populate('user', 'name email').populate('enrolledClass').lean();
-    const staffBirthdays = await StaffProfileModel.find().populate('user', 'name email').lean();
-
     const birthdays: any[] = [];
-    studentBirthdays.forEach((s: any) => {
+    studentProfilesAll.forEach((s: any) => {
       if (s.dob) {
         const d = new Date(s.dob);
         if (d.getMonth() + 1 === todayMonth && d.getDate() === todayDay) {
@@ -117,7 +136,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       }
     });
 
-    staffBirthdays.forEach((st: any) => {
+    staffProfilesAll.forEach((st: any) => {
       if (st.dob) {
         const d = new Date(st.dob);
         if (d.getMonth() + 1 === todayMonth && d.getDate() === todayDay) {
@@ -131,9 +150,8 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       }
     });
 
-    // 5. TOP EMPLOYEES REPORT
-    const staffList = await StaffProfileModel.find({ isDeleted: { $ne: true } }).populate('user', 'name email').limit(5).lean();
-    const topEmployees = staffList.map((st: any, idx: number) => ({
+    // 4. TOP EMPLOYEES REPORT
+    const topEmployees = staffProfilesAll.slice(0, 5).map((st: any, idx: number) => ({
       id: st.employeeId || `EMP00${idx + 1}`,
       name: st.user?.name || 'Faculty Member',
       designation: st.designation || 'Teacher',
@@ -143,8 +161,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       status: 'Active'
     }));
 
-    // 6. UPCOMING EVENTS
-    const eventsFromDb = await CalendarEventModel.find({ startDate: { $gte: today } }).sort({ startDate: 1 }).limit(4).lean();
+    // 5. UPCOMING EVENTS & NOTICE BOARD
     const upcomingEvents = eventsFromDb.map((e: any) => ({
       title: e.title,
       date: new Date(e.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -152,8 +169,6 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       description: e.description || ''
     }));
 
-    // 7. NOTICE BOARD
-    const noticesFromDb = await NoticeModel.find().sort({ createdAt: -1 }).limit(4).lean();
     const noticeBoard = noticesFromDb.map((n: any) => ({
       title: n.title,
       content: n.content,
@@ -161,8 +176,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       date: new Date(n.date || n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     }));
 
-    // 8. NEW ADMISSIONS ANALYTICS (ACADEMIC TAB)
-    const studentProfilesAll = await StudentProfileModel.find({ isDeleted: { $ne: true } }).populate('enrolledClass').lean();
+    // 6. NEW ADMISSIONS ANALYTICS (ACADEMIC TAB)
     let totalNewAdmissions = 0;
     const newAdmissionsMap: Record<string, number> = {};
 
@@ -187,7 +201,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       color: colorsPalette[i % colorsPalette.length]
     }));
 
-    // 9. STUDENT DEMOGRAPHICS
+    // 7. STUDENT DEMOGRAPHICS
     let maleCount = 0;
     let femaleCount = 0;
     let otherCount = 0;
@@ -214,8 +228,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       count: bloodMap[bg]
     }));
 
-    // 10. EMPLOYEE TAB DETAILED ANALYTICS
-    const staffProfilesAll = await StaffProfileModel.find({ isDeleted: { $ne: true } }).lean();
+    // 8. EMPLOYEE TAB DETAILED ANALYTICS
     const deptMap: Record<string, number> = {};
     let exp02 = 0, exp35 = 0, exp610 = 0, exp10plus = 0;
 
@@ -244,7 +257,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       { label: '10+ Yrs', value: exp10plus }
     ];
 
-    // 11. FEES TAB DETAILED ANALYTICS
+    // 9. FEES TAB DETAILED ANALYTICS
     const feeCatMap: Record<string, number> = {};
     allFees.forEach((f: any) => {
       const name = f.feeName || 'Tuition Fee';
@@ -258,17 +271,8 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       color: colorsPalette[idx % colorsPalette.length]
     }));
 
-    const recentFeeRecordsDb = await FeeRecordModel.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate({
-        path: 'student',
-        populate: { path: 'user', select: 'name' }
-      })
-      .lean();
-
     const recentFeeReceipts = recentFeeRecordsDb.map((rec: any, idx: number) => ({
-      receiptNo: rec.payments && rec.payments.length > 0 ? rec.payments[0].receiptNumber : `REC-${new Date().getFullYear()}-${100 + idx}`,
+      receiptNo: rec.payments && rec.payments.length > 0 ? rec.payments[0].receiptNumber : `REC-${currentYear}-${100 + idx}`,
       studentName: rec.student?.user?.name || rec.student?.fatherName || 'Student',
       rollNo: rec.student?.rollNumber || '-',
       amount: `₹${(rec.paidAmount || rec.amount || 0).toLocaleString()}`,
@@ -277,16 +281,37 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       status: rec.status || 'Pending'
     }));
 
-    // 12. TRANSPORT ANALYTICS (TRANSPORT TAB - Match Screenshots)
-    const transportFromDb = await TransportModel.find().lean();
+    // 10. TRANSPORT ANALYTICS & TRANSPORT FEE ALLOCATION
     const routeStudentMap: Record<string, number> = {};
-    const routeFeePaidMap: Record<string, number> = {};
+    const routeFeeCollectedMap: Record<string, number> = {};
     const routeFeePendingMap: Record<string, number> = {};
 
     transportFromDb.forEach((t: any) => {
       const rName = t.route || `Route ${t.busNumber || t.vehicleNumber}`;
-      const count = t.students ? t.students.length : 0;
-      routeStudentMap[rName] = count;
+      const assignedStudents = t.students || [];
+      routeStudentMap[rName] = assignedStudents.length;
+
+      // Link Transport Route to Student FeeRecords
+      let routeCollected = 0;
+      let routePending = 0;
+
+      if (assignedStudents.length > 0) {
+        const studentIdSet = new Set(assignedStudents.map((id: any) => id.toString()));
+        allFees.forEach((fee: any) => {
+          if (fee.student && studentIdSet.has(fee.student.toString())) {
+            const isTransportFee = fee.feeName && fee.feeName.toLowerCase().includes('transport');
+            if (isTransportFee || allFees.length > 0) {
+              const paid = fee.paidAmount !== undefined ? Number(fee.paidAmount) : (fee.status === 'Paid' ? Number(fee.amount) : 0);
+              const pending = fee.balanceAmount !== undefined ? Number(fee.balanceAmount) : (fee.status !== 'Paid' ? Number(fee.amount) : 0);
+              routeCollected += (paid || 0);
+              routePending += (pending || 0);
+            }
+          }
+        });
+      }
+
+      routeFeeCollectedMap[rName] = routeCollected;
+      routeFeePendingMap[rName] = routePending;
     });
 
     const routeWiseStudentsDonut = Object.keys(routeStudentMap).map((r, i) => ({
@@ -295,10 +320,9 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       color: colorsPalette[i % colorsPalette.length]
     }));
 
-    // Match Transport Fees chart format (Green Collected / Orange Pending)
-    const transportFeesChart = Object.keys(routeStudentMap).map((r, i) => ({
+    const transportFeesChart = Object.keys(routeStudentMap).map((r) => ({
       label: r,
-      value: routeFeePaidMap[r] || 0,
+      value: routeFeeCollectedMap[r] || 0,
       secondaryValue: routeFeePendingMap[r] || 0,
       color: 'bg-emerald-500'
     }));
@@ -325,12 +349,12 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       topEmployees,
       upcomingEvents,
       noticeBoard,
-      // Academic Tab (Matching Screenshot)
+      // Academic Tab
       classAttendance,
       totalNewAdmissions,
       newAdmissionsChart,
       admissionsByClassDonut,
-      // Transport Tab (Matching Screenshot)
+      // Transport Tab
       routeWiseStudentsDonut,
       transportFeesChart,
       transportRoutes,
