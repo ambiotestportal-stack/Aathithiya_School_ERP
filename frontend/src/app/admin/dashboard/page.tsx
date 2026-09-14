@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/axios';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { CustomBarChart, CustomDonutChart } from '@/components/molecules/Charts';
 import { 
   Users, Briefcase, GraduationCap, DollarSign, CalendarCheck, 
-  Cake, Award, Bell, Calendar, Bus, BookOpen, UserCheck, Phone, Inbox, UserPlus, PieChart, RefreshCw, Sparkles
+  Cake, Award, Bell, Calendar, Bus, BookOpen, UserCheck, Phone, Inbox, UserPlus, PieChart, RefreshCw, Sparkles, Navigation, Route, ShieldCheck
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -154,45 +154,49 @@ export default function AdminDashboard() {
       {/* TAB 1: OVERVIEW */}
       {activeTab === 'overview' && (
         <div className="space-y-8">
-          {/* KPI Cards */}
+          {/* Vibrant KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div custom={0} initial="hidden" animate="visible" variants={cardVariants} className="soft-card p-6 flex items-center justify-between">
+            <motion.div custom={0} initial="hidden" animate="visible" variants={cardVariants} className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-200/80 dark:border-indigo-800/60 shadow-xl shadow-indigo-500/5 backdrop-blur-md flex items-center justify-between">
               <div>
-                <h3 className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Total Students</h3>
+                <h3 className="text-indigo-600 dark:text-indigo-400 text-xs font-extrabold uppercase tracking-wider">Total Students</h3>
                 <p className="text-3xl font-black mt-2 text-slate-900 dark:text-white">{(stats.totalStudents || 0).toLocaleString()}</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">Enrolled Students</span>
               </div>
-              <div className="w-13 h-13 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-2xl border border-indigo-200/60 dark:border-indigo-800/60 flex items-center justify-center shadow-md shadow-indigo-500/10">
-                <GraduationCap className="w-6 h-6" />
+              <div className="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+                <GraduationCap className="w-7 h-7" />
               </div>
             </motion.div>
 
-            <motion.div custom={1} initial="hidden" animate="visible" variants={cardVariants} className="soft-card p-6 flex items-center justify-between">
+            <motion.div custom={1} initial="hidden" animate="visible" variants={cardVariants} className="p-6 rounded-3xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-200/80 dark:border-purple-800/60 shadow-xl shadow-purple-500/5 backdrop-blur-md flex items-center justify-between">
               <div>
-                <h3 className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Total Teachers</h3>
+                <h3 className="text-purple-600 dark:text-purple-400 text-xs font-extrabold uppercase tracking-wider">Total Teachers</h3>
                 <p className="text-3xl font-black mt-2 text-slate-900 dark:text-white">{(stats.totalTeachers || 0).toLocaleString()}</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">Academic Faculty</span>
               </div>
-              <div className="w-13 h-13 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-2xl border border-purple-200/60 dark:border-purple-800/60 flex items-center justify-center shadow-md shadow-purple-500/10">
-                <Briefcase className="w-6 h-6" />
+              <div className="w-14 h-14 bg-purple-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
+                <Briefcase className="w-7 h-7" />
               </div>
             </motion.div>
 
-            <motion.div custom={2} initial="hidden" animate="visible" variants={cardVariants} className="soft-card p-6 flex items-center justify-between">
+            <motion.div custom={2} initial="hidden" animate="visible" variants={cardVariants} className="p-6 rounded-3xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-200/80 dark:border-blue-800/60 shadow-xl shadow-blue-500/5 backdrop-blur-md flex items-center justify-between">
               <div>
-                <h3 className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Total Parents</h3>
+                <h3 className="text-blue-600 dark:text-blue-400 text-xs font-extrabold uppercase tracking-wider">Total Parents</h3>
                 <p className="text-3xl font-black mt-2 text-slate-900 dark:text-white">{(stats.totalParents || 0).toLocaleString()}</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">Registered Guardians</span>
               </div>
-              <div className="w-13 h-13 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-2xl border border-blue-200/60 dark:border-blue-800/60 flex items-center justify-center shadow-md shadow-blue-500/10">
-                <Users className="w-6 h-6" />
+              <div className="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
+                <Users className="w-7 h-7" />
               </div>
             </motion.div>
 
-            <motion.div custom={3} initial="hidden" animate="visible" variants={cardVariants} className="soft-card p-6 flex items-center justify-between">
+            <motion.div custom={3} initial="hidden" animate="visible" variants={cardVariants} className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-200/80 dark:border-emerald-800/60 shadow-xl shadow-emerald-500/5 backdrop-blur-md flex items-center justify-between">
               <div>
-                <h3 className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Total Revenue</h3>
+                <h3 className="text-emerald-600 dark:text-emerald-400 text-xs font-extrabold uppercase tracking-wider">Total Revenue</h3>
                 <p className="text-3xl font-black mt-2 text-emerald-600 dark:text-emerald-400">₹{(stats.revenue || 0).toLocaleString()}</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300">Realized Payments</span>
               </div>
-              <div className="w-13 h-13 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-center shadow-md shadow-emerald-500/10">
-                <DollarSign className="w-6 h-6" />
+              <div className="w-14 h-14 bg-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
+                <DollarSign className="w-7 h-7" />
               </div>
             </motion.div>
           </div>
@@ -218,30 +222,53 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* TAB 2: ACADEMIC (Spacious Soft UI Design) */}
+      {/* TAB 2: ACADEMIC (Vibrant Soft UI Cards) */}
       {activeTab === 'academic' && (
         <div className="space-y-8">
-          {/* Header & KPI Summary */}
+          {/* Header & Colorful KPI Summary */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Overall Attendance Rate</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">94.2%</p>
-              <p className="text-[11px] font-semibold text-emerald-600 mt-1">High Daily Attendance</p>
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-200/80 dark:border-emerald-800/60 shadow-xl shadow-emerald-500/5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Overall Attendance</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">94.2%</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300">High Daily Attendance</span>
+              </div>
+              <div className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-emerald-500/30 shrink-0">
+                <UserCheck className="w-6 h-6" />
+              </div>
             </div>
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Academic Classes</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">12 Classes</p>
-              <p className="text-[11px] font-semibold text-indigo-600 mt-1">Grade 1 to Grade 12</p>
+
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-200/80 dark:border-indigo-800/60 shadow-xl shadow-indigo-500/5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Academic Classes</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">12 Classes</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">Grade 1 to Grade 12</span>
+              </div>
+              <div className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-indigo-500/30 shrink-0">
+                <BookOpen className="w-6 h-6" />
+              </div>
             </div>
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Enrolled Students</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{(stats.totalStudents || 0).toLocaleString()}</p>
-              <p className="text-[11px] font-semibold text-purple-600 mt-1">Active Enrolment</p>
+
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-200/80 dark:border-purple-800/60 shadow-xl shadow-purple-500/5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">Total Enrolled</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{(stats.totalStudents || 0).toLocaleString()}</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">Active Students</span>
+              </div>
+              <div className="w-12 h-12 bg-purple-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-purple-500/30 shrink-0">
+                <GraduationCap className="w-6 h-6" />
+              </div>
             </div>
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total New Admissions</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{stats.totalNewAdmissions || 0}</p>
-              <p className="text-[11px] font-semibold text-emerald-600 mt-1">Current Academic Batch</p>
+
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-200/80 dark:border-blue-800/60 shadow-xl shadow-blue-500/5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">New Admissions</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{stats.totalNewAdmissions || 0}</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">Current Batch</span>
+              </div>
+              <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-blue-500/30 shrink-0">
+                <UserPlus className="w-6 h-6" />
+              </div>
             </div>
           </div>
 
@@ -315,38 +342,61 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* TAB 3: TRANSPORT */}
+      {/* TAB 3: TRANSPORT (Vibrant Soft UI Cards - Fix Screenshot media_1789375723733.png) */}
       {activeTab === 'transport' && (
         <div className="space-y-8">
-          {/* Fleet KPI Summary Cards */}
+          {/* Vibrant KPI Cards with Icon Badges & Color Gradients */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Fleet Vehicles</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
-                {stats.transportRoutes && stats.transportRoutes.length > 0 ? `${stats.transportRoutes.length} Buses` : '0 Buses'}
-              </p>
-              <p className="text-[11px] font-semibold text-emerald-600 mt-1">Operational Fleet</p>
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-200/80 dark:border-indigo-800/60 shadow-xl shadow-indigo-500/5 backdrop-blur-md flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Total Fleet Vehicles</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
+                  {stats.transportRoutes && stats.transportRoutes.length > 0 ? `${stats.transportRoutes.length} Buses` : '0 Buses'}
+                </p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">Operational Fleet</span>
+              </div>
+              <div className="w-13 h-13 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+                <Bus className="w-6 h-6" />
+              </div>
             </div>
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Routes</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
-                {stats.transportRoutes && stats.transportRoutes.length > 0 ? `${stats.transportRoutes.length} Routes` : '0 Routes'}
-              </p>
-              <p className="text-[11px] font-semibold text-indigo-600 mt-1">City Wide Coverage</p>
+
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-200/80 dark:border-purple-800/60 shadow-xl shadow-purple-500/5 backdrop-blur-md flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">Active Routes</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
+                  {stats.transportRoutes && stats.transportRoutes.length > 0 ? `${stats.transportRoutes.length} Routes` : '0 Routes'}
+                </p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">City Wide Coverage</span>
+              </div>
+              <div className="w-13 h-13 bg-purple-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
+                <Route className="w-6 h-6" />
+              </div>
             </div>
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Commuter Students</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
-                {(stats.transportRoutes || []).reduce((acc: number, curr: any) => acc + (curr.studentCount || 0), 0)} Students
-              </p>
-              <p className="text-[11px] font-semibold text-purple-600 mt-1">Daily Bus Users</p>
+
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-200/80 dark:border-blue-800/60 shadow-xl shadow-blue-500/5 backdrop-blur-md flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Commuter Students</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
+                  {(stats.transportRoutes || []).reduce((acc: number, curr: any) => acc + (curr.studentCount || 0), 0)} Students
+                </p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">Daily Bus Users</span>
+              </div>
+              <div className="w-13 h-13 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
+                <Users className="w-6 h-6" />
+              </div>
             </div>
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Driver & Support Staff</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
-                {stats.transportRoutes && stats.transportRoutes.length > 0 ? `${stats.transportRoutes.length} Drivers` : '0 Staff'}
-              </p>
-              <p className="text-[11px] font-semibold text-emerald-600 mt-1">Licensed Drivers</p>
+
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-200/80 dark:border-emerald-800/60 shadow-xl shadow-emerald-500/5 backdrop-blur-md flex items-center justify-between">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Driver & Support Staff</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
+                  {stats.transportRoutes && stats.transportRoutes.length > 0 ? `${stats.transportRoutes.length} Drivers` : '0 Staff'}
+                </p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300">Licensed Drivers</span>
+              </div>
+              <div className="w-13 h-13 bg-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
             </div>
           </div>
 
@@ -396,6 +446,55 @@ export default function AdminDashboard() {
                 subtitle=""
               />
             </div>
+          </div>
+
+          {/* Transport Fleet & Routes Table */}
+          <div className="soft-card p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
+                <Bus className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Transport Fleet & Driver Allocation</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Route details, assigned drivers, and bus capacity metrics</p>
+              </div>
+            </div>
+
+            {(!stats.transportRoutes || stats.transportRoutes.length === 0) ? (
+              <div className="py-12 text-center text-slate-400 dark:text-slate-500">
+                <Bus className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                <p className="text-xs font-semibold">No transport routes or vehicles registered in database</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+                      <th className="py-3 px-4">Bus No</th>
+                      <th className="py-3 px-4">Vehicle Reg No</th>
+                      <th className="py-3 px-4">Driver Name</th>
+                      <th className="py-3 px-4">Contact</th>
+                      <th className="py-3 px-4">Route Details</th>
+                      <th className="py-3 px-4 text-right">Occupancy / Capacity</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {stats.transportRoutes.map((tr: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                        <td className="py-3.5 px-4 font-black text-indigo-600 dark:text-indigo-400">{tr.busNumber}</td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">{tr.vehicleNumber}</td>
+                        <td className="py-3.5 px-4 font-bold">{tr.driverName}</td>
+                        <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1.5"><Phone className="w-3 h-3 text-emerald-500" /> {tr.driverContact}</td>
+                        <td className="py-3.5 px-4">{tr.route}</td>
+                        <td className="py-3.5 px-4 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                          {tr.studentCount} / {tr.capacity}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
