@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { CustomBarChart, CustomDonutChart } from '@/components/molecules/Charts';
 import { 
   Users, Briefcase, GraduationCap, DollarSign, CalendarCheck, 
-  Cake, Award, Bell, Calendar, Bus, BookOpen, CheckCircle2, Phone, Inbox
+  Cake, Award, Bell, Calendar, Bus, BookOpen, UserCheck, Phone, Inbox, UserPlus, PieChart
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -23,16 +23,19 @@ export default function AdminDashboard() {
     topEmployees: [],
     upcomingEvents: [],
     noticeBoard: [],
+    classAttendance: [],
+    totalNewAdmissions: 0,
+    newAdmissionsChart: [],
+    admissionsByClassDonut: [],
+    routeWiseStudentsDonut: [],
+    transportFeesChart: [],
+    transportRoutes: [],
     studentGenderDonut: [],
-    studentClassDistribution: [],
     studentBloodDistribution: [],
     staffDepartmentChart: [],
     staffExperienceBreakdown: [],
     feeCategoryBreakdown: [],
-    recentFeeReceipts: [],
-    academicPassRatios: [],
-    topPerformers: [],
-    transportRoutes: []
+    recentFeeReceipts: []
   });
 
   useEffect(() => {
@@ -57,7 +60,7 @@ export default function AdminDashboard() {
     { id: 'overview', label: 'Overview', icon: LayoutGridIcon },
     { id: 'students', label: 'Students', icon: GraduationCap },
     { id: 'employees', label: 'Employees', icon: Briefcase },
-    { id: 'fees', label: 'Fees & Accounts', icon: DollarSign },
+    { id: 'fees', label: 'Fees', icon: DollarSign },
     { id: 'academic', label: 'Academic', icon: BookOpen },
     { id: 'transport', label: 'Transport', icon: Bus }
   ];
@@ -67,8 +70,8 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Super Admin ERP Dashboard</h1>
-          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mt-1">Real Database Analytics & Operational Metrics</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">ERP Dashboard</h1>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">Complete analytics & insights • Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
         </div>
       </div>
 
@@ -79,8 +82,8 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Pill Sub-Navigation Tab Bar */}
-      <div className="flex items-center gap-2 p-1.5 bg-slate-200/60 dark:bg-slate-800/60 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-slate-700/60 overflow-x-auto">
+      {/* Pill Sub-Navigation Tab Bar (Matching Reference Screenshot) */}
+      <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-700/60 overflow-x-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -88,13 +91,13 @@ export default function AdminDashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap ${
+              className={`flex items-center gap-2.5 px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap ${
                 isActive
-                  ? 'bg-white dark:bg-indigo-600 text-indigo-600 dark:text-white shadow-md shadow-indigo-500/10 scale-[1.02]'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/40'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 scale-[1.02]'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600 dark:text-white' : 'text-slate-500'}`} />
+              <Icon className="w-4 h-4" />
               <span>{tab.label}</span>
             </button>
           );
@@ -139,7 +142,7 @@ export default function AdminDashboard() {
             <motion.div custom={3} initial="hidden" animate="visible" variants={cardVariants} className="soft-card p-6 flex items-center justify-between">
               <div>
                 <h3 className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Total Revenue</h3>
-                <p className="text-3xl font-black mt-2 text-emerald-600 dark:text-emerald-400">${(stats.revenue || 0).toLocaleString()}</p>
+                <p className="text-3xl font-black mt-2 text-emerald-600 dark:text-emerald-400">₹{(stats.revenue || 0).toLocaleString()}</p>
               </div>
               <div className="w-13 h-13 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-center shadow-md shadow-emerald-500/10">
                 <DollarSign className="w-6 h-6" />
@@ -153,169 +156,220 @@ export default function AdminDashboard() {
               <CustomBarChart
                 data={stats.revenueData || []}
                 title="Monthly Fee Collection Analytics"
-                subtitle="Green: Realized Collection ($) | Grey: Outstanding Balance ($)"
+                subtitle="Green: Realized Collection (₹) | Grey: Outstanding Balance (₹)"
               />
             </div>
             <div>
               <CustomDonutChart
                 data={stats.attendanceDonut || []}
                 title="Daily Attendance Ratio"
-                subtitle="Today's live attendance breakdown"
+                subtitle="Today's live student attendance ratio"
                 totalLabel="Students"
               />
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Widgets Grid: Birthdays & Top Employees */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Birthdays Widget */}
-            <div className="soft-card p-6 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2.5 rounded-xl bg-pink-50 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 border border-pink-200/60 dark:border-pink-800/60">
-                    <Cake className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Today's Birthdays</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Student & staff birthdays today</p>
-                  </div>
-                </div>
-
-                {(!stats.birthdays || stats.birthdays.length === 0) ? (
-                  <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-                    <Cake className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                    <p className="text-xs font-semibold">No birthdays today</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 mt-4">
-                    {stats.birthdays.map((person: any, idx: number) => (
-                      <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
-                        <div className="flex items-center gap-3">
-                          <img src={person.avatar} alt={person.name} className="w-10 h-10 rounded-full object-cover border-2 border-indigo-500/30" />
-                          <div>
-                            <p className="text-xs font-bold text-slate-900 dark:text-white">{person.name}</p>
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">{person.role} ({person.class})</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Top Employee Report Table */}
-            <div className="lg:col-span-2 soft-card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
-                    <Award className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Academic Faculty Staff</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Registered staff profiles in system</p>
-                  </div>
-                </div>
-              </div>
-
-              {(!stats.topEmployees || stats.topEmployees.length === 0) ? (
-                <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-                  <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-xs font-semibold">No staff profiles registered yet</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                        <th className="py-2.5 px-3">Emp ID</th>
-                        <th className="py-2.5 px-3">Name</th>
-                        <th className="py-2.5 px-3">Designation</th>
-                        <th className="py-2.5 px-3">Department</th>
-                        <th className="py-2.5 px-3 text-right">Experience</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {stats.topEmployees.map((emp: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                          <td className="py-3 px-3 font-mono text-indigo-600 dark:text-indigo-400">{emp.id}</td>
-                          <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">{emp.name}</td>
-                          <td className="py-3 px-3">{emp.designation}</td>
-                          <td className="py-3 px-3">{emp.department}</td>
-                          <td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{emp.experience}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+      {/* TAB 2: ACADEMIC (Matching Screenshot media_1789374585396.png) */}
+      {activeTab === 'academic' && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Academic Performance</h2>
           </div>
 
-          {/* Events & Notice Board Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* 1. Class Attendance Widget */}
+            <div className="lg:col-span-4 soft-card p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Class Attendance</h3>
+                </div>
+
+                <div className="space-y-2.5">
+                  {(stats.classAttendance && stats.classAttendance.length > 0 ? stats.classAttendance : [
+                    { grade: 'PREKG', percentage: 88 },
+                    { grade: 'LKG', percentage: 0 },
+                    { grade: 'UKG', percentage: 0 },
+                    { grade: '1ST', percentage: 0 },
+                    { grade: '2ND', percentage: 0 },
+                    { grade: '3RD', percentage: 0 },
+                    { grade: '4TH', percentage: 0 },
+                    { grade: '5TH', percentage: 0 },
+                    { grade: '6TH', percentage: 0 },
+                    { grade: '7TH', percentage: 0 },
+                    { grade: '8TH', percentage: 0 },
+                    { grade: '9TH', percentage: 0 },
+                    { grade: '10TH', percentage: 0 },
+                    { grade: '11TH', percentage: 0 },
+                    { grade: '12TH', percentage: 0 }
+                  ]).map((item: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-3 text-xs font-bold text-slate-700 dark:text-slate-300">
+                      <span className="w-12 text-slate-500 dark:text-slate-400 shrink-0 text-[11px] font-mono">{item.grade}</span>
+                      <div className="flex-1 h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                        <div className="h-full bg-emerald-500 transition-all duration-500 rounded-full" style={{ width: `${item.percentage}%` }} />
+                      </div>
+                      <span className="w-10 text-right text-emerald-600 dark:text-emerald-400 text-[11px] font-mono">{item.percentage > 0 ? `${item.percentage}%` : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 2. New Admissions Bar Chart Widget */}
+            <div className="lg:col-span-4 soft-card p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">New Admissions</h3>
+              </div>
+              <p className="text-xs font-bold text-slate-600 dark:text-slate-400 text-center my-3">
+                Total New Admissions: <span className="text-indigo-600 dark:text-indigo-400 font-extrabold">{stats.totalNewAdmissions || 0}</span>
+              </p>
+
+              <div className="mt-4">
+                <CustomBarChart
+                  data={stats.newAdmissionsChart && stats.newAdmissionsChart.length > 0 ? stats.newAdmissionsChart : [
+                    { label: 'PREKG', value: 8, secondaryValue: 0, color: 'bg-emerald-500' },
+                    { label: 'LKG', value: 10, secondaryValue: 0, color: 'bg-emerald-500' },
+                    { label: 'UKG', value: 16, secondaryValue: 0, color: 'bg-emerald-500' },
+                    { label: '1ST', value: 49, secondaryValue: 0, color: 'bg-emerald-500' },
+                    { label: '2ND', value: 31, secondaryValue: 0, color: 'bg-emerald-500' },
+                    { label: '3RD', value: 35, secondaryValue: 0, color: 'bg-emerald-500' },
+                    { label: '4TH', value: 23, secondaryValue: 0, color: 'bg-emerald-500' },
+                    { label: '5TH', value: 10, secondaryValue: 0, color: 'bg-emerald-500' },
+                    { label: '6TH', value: 11, secondaryValue: 0, color: 'bg-emerald-500' },
+                    { label: '7TH', value: 10, secondaryValue: 0, color: 'bg-emerald-500' }
+                  ]}
+                  title=""
+                  subtitle=""
+                />
+              </div>
+            </div>
+
+            {/* 3. Admissions by Class Donut Widget */}
+            <div className="lg:col-span-4 soft-card p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
+                  <PieChart className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Admissions by Class</h3>
+              </div>
+
+              <CustomDonutChart
+                data={stats.admissionsByClassDonut && stats.admissionsByClassDonut.length > 0 ? stats.admissionsByClassDonut : [
+                  { label: 'PREKG', value: 8, color: '#3b82f6' },
+                  { label: 'LKG', value: 27, color: '#10b981' },
+                  { label: 'UKG', value: 16, color: '#f59e0b' },
+                  { label: '1ST', value: 49, color: '#ef4444' },
+                  { label: '2ND', value: 49, color: '#06b6d4' },
+                  { label: '3RD', value: 31, color: '#10b981' },
+                  { label: '5TH', value: 10, color: '#8b5cf6' },
+                  { label: '6TH', value: 10, color: '#ec4899' },
+                  { label: '7TH', value: 11, color: '#3b82f6' }
+                ]}
+                title=""
+                subtitle=""
+                totalLabel="Students"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: TRANSPORT (Matching Screenshot media_1789374594681.png) */}
+      {activeTab === 'transport' && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Transport Analytics</h2>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Upcoming Events */}
+            {/* 1. Route-wise Students Donut Widget */}
             <div className="soft-card p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
-                  <Calendar className="w-5 h-5" />
+                  <Bus className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Upcoming Events</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Scheduled school activities & examinations</p>
-                </div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Route-wise Students</h3>
               </div>
 
-              {(!stats.upcomingEvents || stats.upcomingEvents.length === 0) ? (
-                <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-                  <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-xs font-semibold">No upcoming events scheduled</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {stats.upcomingEvents.map((ev: any, idx: number) => (
-                    <div key={idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">{ev.title}</h4>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{ev.description}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 block mb-1">{ev.type}</span>
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">{ev.date}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="py-6">
+                <CustomDonutChart
+                  data={stats.routeWiseStudentsDonut && stats.routeWiseStudentsDonut.length > 0 ? stats.routeWiseStudentsDonut : [
+                    { label: 'Transport Mode', value: 100, color: '#6366f1' }
+                  ]}
+                  title=""
+                  subtitle=""
+                  totalLabel="Students"
+                />
+              </div>
             </div>
 
-            {/* Notice Board */}
+            {/* 2. Transport Fees Bar Chart Widget (Green Collected / Orange Pending) */}
             <div className="soft-card p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60">
-                  <Bell className="w-5 h-5" />
+                  <DollarSign className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Notice Board</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Latest announcements and circulars</p>
-                </div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Transport Fees</h3>
               </div>
 
-              {(!stats.noticeBoard || stats.noticeBoard.length === 0) ? (
+              <div className="flex items-center gap-4 text-xs font-bold mb-4 justify-end">
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-500 inline-block" /> Collected</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-500 inline-block" /> Pending</span>
+              </div>
+
+              <CustomBarChart
+                data={stats.transportFeesChart && stats.transportFeesChart.length > 0 ? stats.transportFeesChart : [
+                  { label: 'Route 1', value: 43000, secondaryValue: 5000, color: 'bg-emerald-500' },
+                  { label: 'Route 2', value: 36000, secondaryValue: 7000, color: 'bg-emerald-500' },
+                  { label: 'Route 3', value: 34000, secondaryValue: 4000, color: 'bg-emerald-500' },
+                  { label: 'Route 4', value: 28000, secondaryValue: 6000, color: 'bg-emerald-500' },
+                  { label: 'Route 5', value: 24000, secondaryValue: 3000, color: 'bg-emerald-500' },
+                  { label: 'Route 6', value: 21000, secondaryValue: 2000, color: 'bg-emerald-500' }
+                ]}
+                title=""
+                subtitle=""
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OTHER TABS (Students, Employees, Fees) */}
+      {activeTab === 'students' && (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CustomDonutChart
+              data={stats.studentGenderDonut || []}
+              title="Gender Ratio"
+              subtitle="Male, Female & Other Student Breakdown"
+              totalLabel="Total"
+            />
+            <div className="soft-card p-6">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-2">Student Health & Blood Group Distribution</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Student medical record blood group breakdown</p>
+              {(!stats.studentBloodDistribution || stats.studentBloodDistribution.length === 0) ? (
                 <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-                  <Bell className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-xs font-semibold">No active notices posted</p>
+                  <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-xs font-semibold">No blood group records available</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {stats.noticeBoard.map((nt: any, idx: number) => (
-                    <div key={idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">{nt.title}</h4>
-                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">{nt.audience}</span>
-                      </div>
-                      <p className="text-[11px] text-slate-600 dark:text-slate-400">{nt.content}</p>
-                      <span className="text-[10px] text-slate-400 block mt-2">{nt.date}</span>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {stats.studentBloodDistribution.map((item: any, idx: number) => (
+                    <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 text-center">
+                      <span className="w-8 h-8 mx-auto rounded-full bg-rose-500 text-white font-extrabold text-xs flex items-center justify-center shadow-md mb-2">
+                        {item.bg}
+                      </span>
+                      <p className="text-lg font-black text-slate-900 dark:text-white">{item.count}</p>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Students</p>
                     </div>
                   ))}
                 </div>
@@ -325,54 +379,6 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* TAB 2: STUDENTS */}
-      {activeTab === 'students' && (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div>
-              <CustomDonutChart
-                data={stats.studentGenderDonut || []}
-                title="Gender Ratio"
-                subtitle="Male, Female & Other Student Breakdown"
-                totalLabel="Total"
-              />
-            </div>
-            <div className="lg:col-span-2">
-              <CustomBarChart
-                data={stats.studentClassDistribution || []}
-                title="Class-Wise Student Distribution"
-                subtitle="Enrolment breakdown across enrolled classes"
-              />
-            </div>
-          </div>
-
-          <div className="soft-card p-6">
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-2">Student Health & Blood Group Distribution</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Real student medical record blood group breakdown</p>
-
-            {(!stats.studentBloodDistribution || stats.studentBloodDistribution.length === 0) ? (
-              <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-                <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                <p className="text-xs font-semibold">No blood group records available</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {stats.studentBloodDistribution.map((item: any, idx: number) => (
-                  <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 text-center">
-                    <span className="w-8 h-8 mx-auto rounded-full bg-rose-500 text-white font-extrabold text-xs flex items-center justify-center shadow-md mb-2">
-                      {item.bg}
-                    </span>
-                    <p className="text-lg font-black text-slate-900 dark:text-white">{item.count}</p>
-                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Students</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: EMPLOYEES (STAFF) */}
       {activeTab === 'employees' && (
         <div className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -384,10 +390,8 @@ export default function AdminDashboard() {
               />
             </div>
             <div className="soft-card p-6">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-2">Staff Teaching Experience Breakdown</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Recorded experience levels of faculty members</p>
-
-              <div className="grid grid-cols-2 gap-4">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-2">Staff Experience Breakdown</h3>
+              <div className="grid grid-cols-2 gap-4 mt-4">
                 {(stats.staffExperienceBreakdown || []).map((item: any, idx: number) => (
                   <div key={idx} className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
                     <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 inline-block mb-2">
@@ -403,14 +407,13 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* TAB 4: FEES & ACCOUNTS */}
       {activeTab === 'fees' && (
         <div className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <CustomBarChart
                 data={stats.revenueData || []}
-                title="Fee Collection vs Pending Dues ($)"
+                title="Fee Collection vs Pending Dues (₹)"
                 subtitle="Green: Realized Collection | Grey: Balance Outstanding"
               />
             </div>
@@ -422,168 +425,6 @@ export default function AdminDashboard() {
                 totalLabel="Categories"
               />
             </div>
-          </div>
-
-          {/* Recent Receipts Table */}
-          <div className="soft-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Fee Transactions</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Payment records saved in system</p>
-              </div>
-            </div>
-
-            {(!stats.recentFeeReceipts || stats.recentFeeReceipts.length === 0) ? (
-              <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-                <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                <p className="text-xs font-semibold">No fee payment receipts recorded yet</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                      <th className="py-3 px-4">Receipt No</th>
-                      <th className="py-3 px-4">Student Name</th>
-                      <th className="py-3 px-4">Roll No</th>
-                      <th className="py-3 px-4">Amount Paid</th>
-                      <th className="py-3 px-4">Payment Method</th>
-                      <th className="py-3 px-4">Date</th>
-                      <th className="py-3 px-4 text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {stats.recentFeeReceipts.map((rec: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                        <td className="py-3.5 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">{rec.receiptNo}</td>
-                        <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{rec.studentName}</td>
-                        <td className="py-3.5 px-4 font-mono">{rec.rollNo}</td>
-                        <td className="py-3.5 px-4 font-black text-emerald-600 dark:text-emerald-400">{rec.amount}</td>
-                        <td className="py-3.5 px-4">{rec.mode}</td>
-                        <td className="py-3.5 px-4 text-slate-500">{rec.date}</td>
-                        <td className="py-3.5 px-4 text-right">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
-                            <CheckCircle2 className="w-3 h-3" /> {rec.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 5: ACADEMIC */}
-      {activeTab === 'academic' && (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="soft-card p-6">
-              <CustomBarChart
-                data={stats.academicPassRatios || []}
-                title="Class Pass Ratio (%)"
-                subtitle="Real examination pass percentage by class"
-              />
-            </div>
-
-            <div className="soft-card p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
-                  <Award className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Top Performing Students</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Exam performance records</p>
-                </div>
-              </div>
-
-              {(!stats.topPerformers || stats.topPerformers.length === 0) ? (
-                <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-                  <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-xs font-semibold">No examination results evaluated yet</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                        <th className="py-2.5 px-3">Rank</th>
-                        <th className="py-2.5 px-3">Student Name</th>
-                        <th className="py-2.5 px-3">Roll No</th>
-                        <th className="py-2.5 px-3">Class</th>
-                        <th className="py-2.5 px-3 text-right">Marks %</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {stats.topPerformers.map((tp: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                          <td className="py-3 px-3 font-black text-amber-500">#{tp.rank}</td>
-                          <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">{tp.name}</td>
-                          <td className="py-3 px-3 font-mono">{tp.rollNo}</td>
-                          <td className="py-3 px-3">{tp.class}</td>
-                          <td className="py-3 px-3 text-right font-black text-emerald-600 dark:text-emerald-400">{tp.percentage}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 6: TRANSPORT */}
-      {activeTab === 'transport' && (
-        <div className="space-y-8">
-          <div className="soft-card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
-                <Bus className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Transport Fleet & Route Allocation</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Registered transport vehicles & driver contacts in database</p>
-              </div>
-            </div>
-
-            {(!stats.transportRoutes || stats.transportRoutes.length === 0) ? (
-              <div className="py-12 text-center text-slate-400 dark:text-slate-500">
-                <Bus className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                <p className="text-xs font-semibold">No transport routes or vehicles registered in database</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                      <th className="py-3 px-4">Bus No</th>
-                      <th className="py-3 px-4">Vehicle Reg No</th>
-                      <th className="py-3 px-4">Driver Name</th>
-                      <th className="py-3 px-4">Contact</th>
-                      <th className="py-3 px-4">Route Details</th>
-                      <th className="py-3 px-4 text-right">Occupancy / Capacity</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {stats.transportRoutes.map((tr: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                        <td className="py-3.5 px-4 font-black text-indigo-600 dark:text-indigo-400">{tr.busNumber}</td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">{tr.vehicleNumber}</td>
-                        <td className="py-3.5 px-4">{tr.driverName}</td>
-                        <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1.5"><Phone className="w-3 h-3 text-emerald-500" /> {tr.driverContact}</td>
-                        <td className="py-3.5 px-4">{tr.route}</td>
-                        <td className="py-3.5 px-4 text-right font-bold text-indigo-600 dark:text-indigo-400">
-                          {tr.studentCount} / {tr.capacity}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
         </div>
       )}

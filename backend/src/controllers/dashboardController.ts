@@ -12,12 +12,12 @@ import ExamResultModel from '../models/ExamResult';
 
 export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    // 1. TOTAL COUNTS (Strictly Live DB)
+    // 1. TOTAL COUNTS
     const totalStudents = await StudentProfileModel.countDocuments({ isDeleted: { $ne: true } });
     const totalTeachers = await StaffProfileModel.countDocuments({ isDeleted: { $ne: true } });
     const totalParents = await UserModel.countDocuments({ role: UserRole.PARENT, isDeleted: { $ne: true } });
 
-    // 2. REVENUE & MONTHLY FEE COLLECTION (Strictly Live DB)
+    // 2. REVENUE & MONTHLY FEE COLLECTION
     const allFees = await FeeRecordModel.find().lean();
     const revenue = allFees.reduce((sum, fee: any) => {
       const paid = fee.paidAmount !== undefined ? Number(fee.paidAmount) : (fee.status === 'Paid' ? Number(fee.amount) : 0);
@@ -45,7 +45,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       }
     });
 
-    // 3. ATTENDANCE DONUT (Strictly Live DB Today's Attendance)
+    // 3. ATTENDANCE DONUT & CLASS ATTENDANCE
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -53,18 +53,28 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
 
     const attendances = await AttendanceModel.find({
       date: { $gte: today, $lt: tomorrow }
-    }).lean();
+    }).populate('classId').lean();
 
     let present = 0;
     let absent = 0;
     let onLeave = 0;
+    const classAttendanceMap: Record<string, { present: number; total: number }> = {};
 
-    attendances.forEach(att => {
+    attendances.forEach((att: any) => {
+      const className = att.classId ? `${att.classId.name}`.toUpperCase() : 'CLASS';
+      if (!classAttendanceMap[className]) classAttendanceMap[className] = { present: 0, total: 0 };
+
       if (att.records && Array.isArray(att.records)) {
-        att.records.forEach(r => {
-          if (r.status === 'Present' || r.status === 'Half-Day') present++;
-          else if (r.status === 'Absent') absent++;
-          else if (r.status === 'OD') onLeave++;
+        att.records.forEach((r: any) => {
+          classAttendanceMap[className].total++;
+          if (r.status === 'Present' || r.status === 'Half-Day') {
+            present++;
+            classAttendanceMap[className].present++;
+          } else if (r.status === 'Absent') {
+            absent++;
+          } else if (r.status === 'OD') {
+            onLeave++;
+          }
         });
       }
     });
@@ -75,7 +85,16 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       { label: 'On Leave', value: onLeave, color: '#f59e0b' }
     ];
 
-    // 4. TODAY'S BIRTHDAYS (Strictly Live DB)
+    const defaultGrades = ['PREKG', 'LKG', 'UKG', '1ST', '2ND', '3RD', '4TH', '5TH', '6TH', '7TH', '8TH', '9TH', '10TH', '11TH', '12TH'];
+    const classAttendance = defaultGrades.map(g => {
+      const found = Object.keys(classAttendanceMap).find(k => k.includes(g));
+      const percentage = (found && classAttendanceMap[found].total > 0)
+        ? Math.round((classAttendanceMap[found].present / classAttendanceMap[found].total) * 100)
+        : 0;
+      return { grade: g, percentage };
+    });
+
+    // 4. TODAY'S BIRTHDAYS
     const todayMonth = today.getMonth() + 1;
     const todayDay = today.getDate();
 
@@ -112,7 +131,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       }
     });
 
-    // 5. TOP EMPLOYEES REPORT (Strictly Live DB Staff)
+    // 5. TOP EMPLOYEES REPORT
     const staffList = await StaffProfileModel.find({ isDeleted: { $ne: true } }).populate('user', 'name email').limit(5).lean();
     const topEmployees = staffList.map((st: any, idx: number) => ({
       id: st.employeeId || `EMP00${idx + 1}`,
@@ -124,7 +143,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       status: 'Active'
     }));
 
-    // 6. UPCOMING EVENTS (Strictly Live DB CalendarEvents)
+    // 6. UPCOMING EVENTS
     const eventsFromDb = await CalendarEventModel.find({ startDate: { $gte: today } }).sort({ startDate: 1 }).limit(4).lean();
     const upcomingEvents = eventsFromDb.map((e: any) => ({
       title: e.title,
@@ -133,7 +152,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       description: e.description || ''
     }));
 
-    // 7. NOTICE BOARD (Strictly Live DB Notices)
+    // 7. NOTICE BOARD
     const noticesFromDb = await NoticeModel.find().sort({ createdAt: -1 }).limit(4).lean();
     const noticeBoard = noticesFromDb.map((n: any) => ({
       title: n.title,
@@ -142,13 +161,37 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       date: new Date(n.date || n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     }));
 
-    // 8. STUDENT TAB DETAILED ANALYTICS (Strictly Live DB)
+    // 8. NEW ADMISSIONS ANALYTICS (ACADEMIC TAB)
     const studentProfilesAll = await StudentProfileModel.find({ isDeleted: { $ne: true } }).populate('enrolledClass').lean();
+    let totalNewAdmissions = 0;
+    const newAdmissionsMap: Record<string, number> = {};
+
+    studentProfilesAll.forEach((s: any) => {
+      totalNewAdmissions++;
+      if (s.enrolledClass) {
+        const className = `${s.enrolledClass.name}`.toUpperCase().trim();
+        newAdmissionsMap[className] = (newAdmissionsMap[className] || 0) + 1;
+      }
+    });
+
+    const newAdmissionsChart = defaultGrades.map(g => {
+      const foundKey = Object.keys(newAdmissionsMap).find(k => k.includes(g));
+      const count = foundKey ? newAdmissionsMap[foundKey] : 0;
+      return { label: g, value: count, secondaryValue: 0, color: 'bg-emerald-500' };
+    });
+
+    const colorsPalette = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#3b82f6', '#06b6d4', '#84cc16'];
+    const admissionsByClassDonut = Object.keys(newAdmissionsMap).map((cls, i) => ({
+      label: cls,
+      value: newAdmissionsMap[cls],
+      color: colorsPalette[i % colorsPalette.length]
+    }));
+
+    // 9. STUDENT DEMOGRAPHICS
     let maleCount = 0;
     let femaleCount = 0;
     let otherCount = 0;
     const bloodMap: Record<string, number> = {};
-    const classCountMap: Record<string, number> = {};
 
     studentProfilesAll.forEach((s: any) => {
       if (s.gender === 'Female') femaleCount++;
@@ -158,11 +201,6 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       if (s.bloodGroup) {
         bloodMap[s.bloodGroup] = (bloodMap[s.bloodGroup] || 0) + 1;
       }
-
-      if (s.enrolledClass) {
-        const className = `${s.enrolledClass.name} ${s.enrolledClass.section || ''}`.trim();
-        classCountMap[className] = (classCountMap[className] || 0) + 1;
-      }
     });
 
     const studentGenderDonut = [
@@ -171,25 +209,15 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       { label: 'Other', value: otherCount, color: '#8b5cf6' }
     ];
 
-    const studentClassDistribution = Object.keys(classCountMap).map(cls => ({
-      label: cls,
-      value: classCountMap[cls],
-      secondaryValue: 0,
-      color: 'bg-indigo-500'
-    }));
-
     const studentBloodDistribution = Object.keys(bloodMap).map(bg => ({
       bg,
       count: bloodMap[bg]
     }));
 
-    // 9. EMPLOYEE TAB DETAILED ANALYTICS (Strictly Live DB)
+    // 10. EMPLOYEE TAB DETAILED ANALYTICS
     const staffProfilesAll = await StaffProfileModel.find({ isDeleted: { $ne: true } }).lean();
     const deptMap: Record<string, number> = {};
-    let exp02 = 0;
-    let exp35 = 0;
-    let exp610 = 0;
-    let exp10plus = 0;
+    let exp02 = 0, exp35 = 0, exp610 = 0, exp10plus = 0;
 
     staffProfilesAll.forEach((st: any) => {
       const dept = st.department || 'Academics';
@@ -216,7 +244,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       { label: '10+ Yrs', value: exp10plus }
     ];
 
-    // 10. FEES TAB DETAILED ANALYTICS (Strictly Live DB)
+    // 11. FEES TAB DETAILED ANALYTICS
     const feeCatMap: Record<string, number> = {};
     allFees.forEach((f: any) => {
       const name = f.feeName || 'Tuition Fee';
@@ -224,14 +252,11 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       feeCatMap[name] = (feeCatMap[name] || 0) + paid;
     });
 
-    const feeCategoryBreakdown = Object.keys(feeCatMap).map((cat, idx) => {
-      const colors = ['#4f46e5', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#3b82f6'];
-      return {
-        label: cat,
-        value: feeCatMap[cat],
-        color: colors[idx % colors.length]
-      };
-    });
+    const feeCategoryBreakdown = Object.keys(feeCatMap).map((cat, idx) => ({
+      label: cat,
+      value: feeCatMap[cat],
+      color: colorsPalette[idx % colorsPalette.length]
+    }));
 
     const recentFeeRecordsDb = await FeeRecordModel.find()
       .sort({ createdAt: -1 })
@@ -246,73 +271,38 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       receiptNo: rec.payments && rec.payments.length > 0 ? rec.payments[0].receiptNumber : `REC-${new Date().getFullYear()}-${100 + idx}`,
       studentName: rec.student?.user?.name || rec.student?.fatherName || 'Student',
       rollNo: rec.student?.rollNumber || '-',
-      amount: `$${(rec.paidAmount || rec.amount || 0).toLocaleString()}`,
+      amount: `₹${(rec.paidAmount || rec.amount || 0).toLocaleString()}`,
       date: rec.paymentDate ? new Date(rec.paymentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : new Date(rec.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       mode: rec.paymentMethod || 'Cash',
       status: rec.status || 'Pending'
     }));
 
-    // 11. ACADEMIC TAB DETAILED ANALYTICS (Strictly Live DB)
-    const examResultsAll = await ExamResultModel.find()
-      .populate({ path: 'student', populate: [{ path: 'user', select: 'name' }, { path: 'enrolledClass' }] })
-      .populate('subject', 'name')
-      .lean();
+    // 12. TRANSPORT ANALYTICS (TRANSPORT TAB - Match Screenshots)
+    const transportFromDb = await TransportModel.find().lean();
+    const routeStudentMap: Record<string, number> = {};
+    const routeFeePaidMap: Record<string, number> = {};
+    const routeFeePendingMap: Record<string, number> = {};
 
-    const classPassMap: Record<string, { total: number; passed: number }> = {};
-    const studentPerformanceMap: Record<string, { name: string; rollNo: string; className: string; totalMarks: number; obtainedMarks: number }> = {};
-
-    examResultsAll.forEach((res: any) => {
-      if (res.student && res.student.enrolledClass) {
-        const className = `${res.student.enrolledClass.name} ${res.student.enrolledClass.section || ''}`.trim();
-        if (!classPassMap[className]) classPassMap[className] = { total: 0, passed: 0 };
-        classPassMap[className].total++;
-        if ((res.marksObtained / res.totalMarks) >= 0.4) {
-          classPassMap[className].passed++;
-        }
-      }
-
-      if (res.student) {
-        const stId = res.student._id.toString();
-        if (!studentPerformanceMap[stId]) {
-          studentPerformanceMap[stId] = {
-            name: res.student.user?.name || res.student.fatherName || 'Student',
-            rollNo: res.student.rollNumber || '-',
-            className: res.student.enrolledClass ? `${res.student.enrolledClass.name}-${res.student.enrolledClass.section}` : '-',
-            totalMarks: 0,
-            obtainedMarks: 0
-          };
-        }
-        studentPerformanceMap[stId].totalMarks += res.totalMarks || 100;
-        studentPerformanceMap[stId].obtainedMarks += res.marksObtained || 0;
-      }
+    transportFromDb.forEach((t: any) => {
+      const rName = t.route || `Route ${t.busNumber || t.vehicleNumber}`;
+      const count = t.students ? t.students.length : 0;
+      routeStudentMap[rName] = count;
     });
 
-    const academicPassRatios = Object.keys(classPassMap).map(cls => ({
-      label: cls,
-      value: classPassMap[cls].total > 0 ? Math.round((classPassMap[cls].passed / classPassMap[cls].total) * 100) : 0,
-      secondaryValue: 0,
+    const routeWiseStudentsDonut = Object.keys(routeStudentMap).map((r, i) => ({
+      label: r,
+      value: routeStudentMap[r],
+      color: colorsPalette[i % colorsPalette.length]
+    }));
+
+    // Match Transport Fees chart format (Green Collected / Orange Pending)
+    const transportFeesChart = Object.keys(routeStudentMap).map((r, i) => ({
+      label: r,
+      value: routeFeePaidMap[r] || 0,
+      secondaryValue: routeFeePendingMap[r] || 0,
       color: 'bg-emerald-500'
     }));
 
-    const topPerformersSorted = Object.values(studentPerformanceMap)
-      .map(s => ({
-        ...s,
-        percentageVal: s.totalMarks > 0 ? (s.obtainedMarks / s.totalMarks) * 100 : 0
-      }))
-      .sort((a, b) => b.percentageVal - a.percentageVal)
-      .slice(0, 5);
-
-    const topPerformers = topPerformersSorted.map((tp, idx) => ({
-      rank: idx + 1,
-      name: tp.name,
-      rollNo: tp.rollNo,
-      class: tp.className,
-      percentage: `${tp.percentageVal.toFixed(1)}%`,
-      grade: tp.percentageVal >= 90 ? 'A+' : (tp.percentageVal >= 80 ? 'A' : 'B')
-    }));
-
-    // 12. TRANSPORT TAB DETAILED ANALYTICS (Strictly Live DB)
-    const transportFromDb = await TransportModel.find().lean();
     const transportRoutes = transportFromDb.map((t: any) => ({
       busNumber: t.busNumber || 'Bus',
       vehicleNumber: t.vehicleNumber,
@@ -335,21 +325,22 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       topEmployees,
       upcomingEvents,
       noticeBoard,
-      // Students Tab
+      // Academic Tab (Matching Screenshot)
+      classAttendance,
+      totalNewAdmissions,
+      newAdmissionsChart,
+      admissionsByClassDonut,
+      // Transport Tab (Matching Screenshot)
+      routeWiseStudentsDonut,
+      transportFeesChart,
+      transportRoutes,
+      // Demographics & Staff & Fees
       studentGenderDonut,
-      studentClassDistribution,
       studentBloodDistribution,
-      // Staff Tab
       staffDepartmentChart,
       staffExperienceBreakdown,
-      // Fee Tab
       feeCategoryBreakdown,
-      recentFeeReceipts,
-      // Academic Tab
-      academicPassRatios,
-      topPerformers,
-      // Transport Tab
-      transportRoutes
+      recentFeeReceipts
     });
   } catch (error) {
     console.error('Dashboard Stats Error:', error);
