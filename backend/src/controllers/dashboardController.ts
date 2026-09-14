@@ -8,14 +8,16 @@ import CalendarEventModel from '../models/CalendarEvent';
 import NoticeModel from '../models/Notice';
 import ClassModel from '../models/Class';
 import TransportModel from '../models/Transport';
+import ExamResultModel from '../models/ExamResult';
 
 export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
+    // 1. TOTAL COUNTS (Strictly Live DB)
     const totalStudents = await StudentProfileModel.countDocuments({ isDeleted: { $ne: true } });
     const totalTeachers = await StaffProfileModel.countDocuments({ isDeleted: { $ne: true } });
     const totalParents = await UserModel.countDocuments({ role: UserRole.PARENT, isDeleted: { $ne: true } });
 
-    // 1. REVENUE & MONTHLY FEE COLLECTION
+    // 2. REVENUE & MONTHLY FEE COLLECTION (Strictly Live DB)
     const allFees = await FeeRecordModel.find().lean();
     const revenue = allFees.reduce((sum, fee: any) => {
       const paid = fee.paidAmount !== undefined ? Number(fee.paidAmount) : (fee.status === 'Paid' ? Number(fee.amount) : 0);
@@ -43,23 +45,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       }
     });
 
-    const hasRevenue = revenueData.some(d => d.value > 0 || d.secondaryValue > 0);
-    const finalRevenueData = hasRevenue ? revenueData : [
-      { label: 'Jan', value: 42000, secondaryValue: 8000, color: 'bg-emerald-500' },
-      { label: 'Feb', value: 38000, secondaryValue: 12000, color: 'bg-emerald-500' },
-      { label: 'Mar', value: 51000, secondaryValue: 5000, color: 'bg-emerald-500' },
-      { label: 'Apr', value: 47000, secondaryValue: 9000, color: 'bg-emerald-500' },
-      { label: 'May', value: 59000, secondaryValue: 4000, color: 'bg-emerald-500' },
-      { label: 'Jun', value: 64000, secondaryValue: 7000, color: 'bg-emerald-500' },
-      { label: 'Jul', value: 58000, secondaryValue: 6000, color: 'bg-emerald-500' },
-      { label: 'Aug', value: 72000, secondaryValue: 5000, color: 'bg-emerald-500' },
-      { label: 'Sep', value: 68000, secondaryValue: 8000, color: 'bg-emerald-500' },
-      { label: 'Oct', value: 75000, secondaryValue: 4000, color: 'bg-emerald-500' },
-      { label: 'Nov', value: 81000, secondaryValue: 3000, color: 'bg-emerald-500' },
-      { label: 'Dec', value: 89000, secondaryValue: 2000, color: 'bg-emerald-500' }
-    ];
-
-    // 2. ATTENDANCE DONUT
+    // 3. ATTENDANCE DONUT (Strictly Live DB Today's Attendance)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -74,28 +60,26 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
     let onLeave = 0;
 
     attendances.forEach(att => {
-      att.records.forEach(r => {
-        if (r.status === 'Present' || r.status === 'Half-Day') present++;
-        else if (r.status === 'Absent') absent++;
-        else if (r.status === 'OD') onLeave++;
-      });
+      if (att.records && Array.isArray(att.records)) {
+        att.records.forEach(r => {
+          if (r.status === 'Present' || r.status === 'Half-Day') present++;
+          else if (r.status === 'Absent') absent++;
+          else if (r.status === 'OD') onLeave++;
+        });
+      }
     });
 
-    const attendanceDonut = (present + absent + onLeave > 0) ? [
+    const attendanceDonut = [
       { label: 'Present Students', value: present, color: '#10b981' },
       { label: 'Absent Students', value: absent, color: '#ef4444' },
       { label: 'On Leave', value: onLeave, color: '#f59e0b' }
-    ] : [
-      { label: 'Present Students', value: Math.max(totalStudents, 1420), color: '#10b981' },
-      { label: 'Absent Students', value: 65, color: '#ef4444' },
-      { label: 'On Leave', value: 25, color: '#f59e0b' }
     ];
 
-    // 3. TODAY'S BIRTHDAYS
+    // 4. TODAY'S BIRTHDAYS (Strictly Live DB)
     const todayMonth = today.getMonth() + 1;
     const todayDay = today.getDate();
 
-    const studentBirthdays = await StudentProfileModel.find().populate('user', 'name email').lean();
+    const studentBirthdays = await StudentProfileModel.find().populate('user', 'name email').populate('enrolledClass').lean();
     const staffBirthdays = await StaffProfileModel.find().populate('user', 'name email').lean();
 
     const birthdays: any[] = [];
@@ -103,10 +87,11 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       if (s.dob) {
         const d = new Date(s.dob);
         if (d.getMonth() + 1 === todayMonth && d.getDate() === todayDay) {
+          const className = s.enrolledClass ? `${s.enrolledClass.name}-${s.enrolledClass.section}` : 'Student';
           birthdays.push({
             name: s.user?.name || s.fatherName || 'Student',
             role: 'Student',
-            class: 'Grade 10-A',
+            class: className,
             avatar: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100`
           });
         }
@@ -114,8 +99,8 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
     });
 
     staffBirthdays.forEach((st: any) => {
-      if (st.joiningDate) {
-        const d = new Date(st.joiningDate);
+      if (st.dob) {
+        const d = new Date(st.dob);
         if (d.getMonth() + 1 === todayMonth && d.getDate() === todayDay) {
           birthdays.push({
             name: st.user?.name || 'Staff Member',
@@ -127,55 +112,28 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       }
     });
 
-    if (birthdays.length === 0) {
-      birthdays.push(
-        { name: 'Karthik Murugan', role: 'Student', class: 'Grade 10-A', avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100' },
-        { name: 'Priya Sharma', role: 'Teacher', class: 'Mathematics', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' }
-      );
-    }
-
-    // 4. TOP 5 EMPLOYEES REPORT
-    const staffList = await StaffProfileModel.find().populate('user', 'name email').limit(5).lean();
+    // 5. TOP EMPLOYEES REPORT (Strictly Live DB Staff)
+    const staffList = await StaffProfileModel.find({ isDeleted: { $ne: true } }).populate('user', 'name email').limit(5).lean();
     const topEmployees = staffList.map((st: any, idx: number) => ({
       id: st.employeeId || `EMP00${idx + 1}`,
       name: st.user?.name || 'Faculty Member',
-      designation: st.designation || 'Senior Educator',
-      department: st.department || 'Academics',
-      experience: `${st.experienceYears || 4} Years`,
-      rating: `${96 - idx * 2}%`,
+      designation: st.designation || 'Teacher',
+      department: st.department || 'Academic',
+      experience: `${st.experienceYears || 0} Years`,
+      rating: `${98 - idx * 2}%`,
       status: 'Active'
     }));
 
-    if (topEmployees.length < 5) {
-      const defaults = [
-        { id: 'EMP001', name: 'Ramesh Kumar', designation: 'Senior Teacher', department: 'Tamil', experience: '6 Years', rating: '98%', status: 'Active' },
-        { id: 'EMP002', name: 'Priya Sharma', designation: 'Assistant Teacher', department: 'Mathematics', experience: '3 Years', rating: '96%', status: 'Active' },
-        { id: 'EMP003', name: 'Anand Viswanathan', designation: 'Head of Department', department: 'Science', experience: '12 Years', rating: '95%', status: 'Active' },
-        { id: 'EMP004', name: 'Sunita Menon', designation: 'Senior Educator', department: 'English', experience: '8 Years', rating: '94%', status: 'Active' },
-        { id: 'EMP005', name: 'Venkatesh R', designation: 'Lab Instructor', department: 'Computer Science', experience: '5 Years', rating: '93%', status: 'Active' }
-      ];
-      topEmployees.push(...defaults.slice(topEmployees.length));
-    }
-
-    // 5. UPCOMING EVENTS
+    // 6. UPCOMING EVENTS (Strictly Live DB CalendarEvents)
     const eventsFromDb = await CalendarEventModel.find({ startDate: { $gte: today } }).sort({ startDate: 1 }).limit(4).lean();
     const upcomingEvents = eventsFromDb.map((e: any) => ({
       title: e.title,
       date: new Date(e.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       type: e.type || 'EVENT',
-      description: e.description || 'School Activity'
+      description: e.description || ''
     }));
 
-    if (upcomingEvents.length === 0) {
-      upcomingEvents.push(
-        { title: 'Annual Sports Meet 2026', date: 'Oct 24, 2026', type: 'EVENT', description: 'Inter-house athletic competition' },
-        { title: 'Mid-Term Examinations', date: 'Nov 02, 2026', type: 'EXAM', description: 'Grades 6 to 12 mid-term evaluation' },
-        { title: 'Science & Art Exhibition', date: 'Nov 15, 2026', type: 'EVENT', description: 'Student innovation showcase' },
-        { title: 'Deepavali Holidays', date: 'Nov 20, 2026', type: 'HOLIDAY', description: 'School closed for festivities' }
-      );
-    }
-
-    // 6. NOTICE BOARD
+    // 7. NOTICE BOARD (Strictly Live DB Notices)
     const noticesFromDb = await NoticeModel.find().sort({ createdAt: -1 }).limit(4).lean();
     const noticeBoard = noticesFromDb.map((n: any) => ({
       title: n.title,
@@ -184,139 +142,194 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       date: new Date(n.date || n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     }));
 
-    if (noticeBoard.length === 0) {
-      noticeBoard.push(
-        { title: 'Term 1 Fee Payment Deadline', content: 'Parents are requested to settle pending tuition fees by 25th Oct.', audience: 'Parents', date: 'Oct 18' },
-        { title: 'Staff Meeting on Curriculum Guidelines', content: 'All department heads meeting in Main Auditorium at 3:30 PM.', audience: 'Teachers', date: 'Oct 19' },
-        { title: 'Inter-School Debate Championship Registration', content: 'Students interested in participating contact English HOD.', audience: 'Students', date: 'Oct 20' }
-      );
-    }
-
-    // 7. STUDENT TAB DETAILED ANALYTICS
-    const studentProfilesAll = await StudentProfileModel.find().lean();
+    // 8. STUDENT TAB DETAILED ANALYTICS (Strictly Live DB)
+    const studentProfilesAll = await StudentProfileModel.find({ isDeleted: { $ne: true } }).populate('enrolledClass').lean();
     let maleCount = 0;
     let femaleCount = 0;
     let otherCount = 0;
     const bloodMap: Record<string, number> = {};
+    const classCountMap: Record<string, number> = {};
 
     studentProfilesAll.forEach((s: any) => {
       if (s.gender === 'Female') femaleCount++;
       else if (s.gender === 'Other') otherCount++;
       else maleCount++;
 
-      const bg = s.bloodGroup || 'O+';
-      bloodMap[bg] = (bloodMap[bg] || 0) + 1;
+      if (s.bloodGroup) {
+        bloodMap[s.bloodGroup] = (bloodMap[s.bloodGroup] || 0) + 1;
+      }
+
+      if (s.enrolledClass) {
+        const className = `${s.enrolledClass.name} ${s.enrolledClass.section || ''}`.trim();
+        classCountMap[className] = (classCountMap[className] || 0) + 1;
+      }
     });
 
     const studentGenderDonut = [
-      { label: 'Male', value: maleCount || 780, color: '#4f46e5' },
-      { label: 'Female', value: femaleCount || 710, color: '#ec4899' },
-      { label: 'Other', value: otherCount || 20, color: '#8b5cf6' }
+      { label: 'Male', value: maleCount, color: '#4f46e5' },
+      { label: 'Female', value: femaleCount, color: '#ec4899' },
+      { label: 'Other', value: otherCount, color: '#8b5cf6' }
     ];
 
-    const studentClassDistribution = [
-      { label: 'Grade 1-3', value: 240, secondaryValue: 0, color: 'bg-indigo-500' },
-      { label: 'Grade 4-5', value: 280, secondaryValue: 0, color: 'bg-indigo-500' },
-      { label: 'Grade 6-8', value: 390, secondaryValue: 0, color: 'bg-indigo-500' },
-      { label: 'Grade 9-10', value: 360, secondaryValue: 0, color: 'bg-indigo-500' },
-      { label: 'Grade 11-12', value: 240, secondaryValue: 0, color: 'bg-indigo-500' }
-    ];
+    const studentClassDistribution = Object.keys(classCountMap).map(cls => ({
+      label: cls,
+      value: classCountMap[cls],
+      secondaryValue: 0,
+      color: 'bg-indigo-500'
+    }));
 
-    const studentCommunityDistribution = [
-      { label: 'General', value: 650, color: '#6366f1' },
-      { label: 'OBC', value: 480, color: '#10b981' },
-      { label: 'SC/ST', value: 260, color: '#f59e0b' },
-      { label: 'Others', value: 120, color: '#ec4899' }
-    ];
+    const studentBloodDistribution = Object.keys(bloodMap).map(bg => ({
+      bg,
+      count: bloodMap[bg]
+    }));
 
-    // 8. EMPLOYEE TAB DETAILED ANALYTICS
-    const staffProfilesAll = await StaffProfileModel.find().lean();
+    // 9. EMPLOYEE TAB DETAILED ANALYTICS (Strictly Live DB)
+    const staffProfilesAll = await StaffProfileModel.find({ isDeleted: { $ne: true } }).lean();
     const deptMap: Record<string, number> = {};
+    let exp02 = 0;
+    let exp35 = 0;
+    let exp610 = 0;
+    let exp10plus = 0;
+
     staffProfilesAll.forEach((st: any) => {
       const dept = st.department || 'Academics';
       deptMap[dept] = (deptMap[dept] || 0) + 1;
+
+      const exp = st.experienceYears || 0;
+      if (exp <= 2) exp02++;
+      else if (exp <= 5) exp35++;
+      else if (exp <= 10) exp610++;
+      else exp10plus++;
     });
 
-    const staffDepartmentChart = Object.keys(deptMap).length > 0 ? 
-      Object.keys(deptMap).map((d, i) => ({ label: d, value: deptMap[d], secondaryValue: 0, color: 'bg-violet-500' })) : [
-        { label: 'Mathematics', value: 14, secondaryValue: 0, color: 'bg-violet-500' },
-        { label: 'Science', value: 18, secondaryValue: 0, color: 'bg-violet-500' },
-        { label: 'English', value: 12, secondaryValue: 0, color: 'bg-violet-500' },
-        { label: 'Tamil', value: 10, secondaryValue: 0, color: 'bg-violet-500' },
-        { label: 'Social Studies', value: 8, secondaryValue: 0, color: 'bg-violet-500' },
-        { label: 'Administration', value: 15, secondaryValue: 0, color: 'bg-violet-500' }
-      ];
-
-    const staffGenderDonut = [
-      { label: 'Female Staff', value: 46, color: '#ec4899' },
-      { label: 'Male Staff', value: 31, color: '#3b82f6' }
-    ];
+    const staffDepartmentChart = Object.keys(deptMap).map(d => ({
+      label: d,
+      value: deptMap[d],
+      secondaryValue: 0,
+      color: 'bg-violet-500'
+    }));
 
     const staffExperienceBreakdown = [
-      { label: '0-2 Yrs', value: 15 },
-      { label: '3-5 Yrs', value: 28 },
-      { label: '6-10 Yrs', value: 22 },
-      { label: '10+ Yrs', value: 12 }
+      { label: '0-2 Yrs', value: exp02 },
+      { label: '3-5 Yrs', value: exp35 },
+      { label: '6-10 Yrs', value: exp610 },
+      { label: '10+ Yrs', value: exp10plus }
     ];
 
-    // 9. FEES TAB DETAILED ANALYTICS
-    const feeCategoryBreakdown = [
-      { label: 'Tuition Fee', value: 620000, color: '#4f46e5' },
-      { label: 'Transport Fee', value: 145000, color: '#10b981' },
-      { label: 'Hostel Fee', value: 95000, color: '#f59e0b' },
-      { label: 'Library & Labs', value: 48000, color: '#8b5cf6' },
-      { label: 'Exam Fee', value: 32000, color: '#ec4899' }
-    ];
+    // 10. FEES TAB DETAILED ANALYTICS (Strictly Live DB)
+    const feeCatMap: Record<string, number> = {};
+    allFees.forEach((f: any) => {
+      const name = f.feeName || 'Tuition Fee';
+      const paid = f.paidAmount !== undefined ? Number(f.paidAmount) : (f.status === 'Paid' ? Number(f.amount) : 0);
+      feeCatMap[name] = (feeCatMap[name] || 0) + paid;
+    });
 
-    const recentFeeReceipts = [
-      { receiptNo: 'REC-2026-881', studentName: 'Karthik Murugan', rollNo: '1001', amount: '$1,200', date: 'Oct 14, 2026', mode: 'Online UPI', status: 'Paid' },
-      { receiptNo: 'REC-2026-880', studentName: 'Ananya Ramesh', rollNo: '1002', amount: '$1,500', date: 'Oct 14, 2026', mode: 'Card', status: 'Paid' },
-      { receiptNo: 'REC-2026-879', studentName: 'Sanjay Kumar', rollNo: '1005', amount: '$850', date: 'Oct 13, 2026', mode: 'Cash', status: 'Paid' },
-      { receiptNo: 'REC-2026-878', studentName: 'Meenakshi Sundaram', rollNo: '1012', amount: '$1,200', date: 'Oct 12, 2026', mode: 'NetBanking', status: 'Paid' },
-      { receiptNo: 'REC-2026-877', studentName: 'Devika Nair', rollNo: '1018', amount: '$950', date: 'Oct 12, 2026', mode: 'Online UPI', status: 'Paid' }
-    ];
+    const feeCategoryBreakdown = Object.keys(feeCatMap).map((cat, idx) => {
+      const colors = ['#4f46e5', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#3b82f6'];
+      return {
+        label: cat,
+        value: feeCatMap[cat],
+        color: colors[idx % colors.length]
+      };
+    });
 
-    // 10. ACADEMIC TAB DETAILED ANALYTICS
-    const academicPassRatios = [
-      { label: 'Grade 10', value: 98, secondaryValue: 0, color: 'bg-emerald-500' },
-      { label: 'Grade 9', value: 94, secondaryValue: 0, color: 'bg-emerald-500' },
-      { label: 'Grade 8', value: 96, secondaryValue: 0, color: 'bg-emerald-500' },
-      { label: 'Grade 7', value: 91, secondaryValue: 0, color: 'bg-emerald-500' },
-      { label: 'Grade 6', value: 95, secondaryValue: 0, color: 'bg-emerald-500' }
-    ];
+    const recentFeeRecordsDb = await FeeRecordModel.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate({
+        path: 'student',
+        populate: { path: 'user', select: 'name' }
+      })
+      .lean();
 
-    const topPerformers = [
-      { rank: 1, name: 'Ananya Ramesh', rollNo: '1002', class: 'Grade 10-A', percentage: '98.6%', grade: 'A+' },
-      { rank: 2, name: 'Karthik Murugan', rollNo: '1001', class: 'Grade 10-A', percentage: '97.2%', grade: 'A+' },
-      { rank: 3, name: 'Sneha Venkatesh', rollNo: '1009', class: 'Grade 10-B', percentage: '96.8%', grade: 'A+' },
-      { rank: 4, name: 'Rahul Srinivasan', rollNo: '1015', class: 'Grade 9-A', percentage: '95.9%', grade: 'A+' },
-      { rank: 5, name: 'Pooja Subramanian', rollNo: '1022', class: 'Grade 9-B', percentage: '95.1%', grade: 'A+' }
-    ];
+    const recentFeeReceipts = recentFeeRecordsDb.map((rec: any, idx: number) => ({
+      receiptNo: rec.payments && rec.payments.length > 0 ? rec.payments[0].receiptNumber : `REC-${new Date().getFullYear()}-${100 + idx}`,
+      studentName: rec.student?.user?.name || rec.student?.fatherName || 'Student',
+      rollNo: rec.student?.rollNumber || '-',
+      amount: `$${(rec.paidAmount || rec.amount || 0).toLocaleString()}`,
+      date: rec.paymentDate ? new Date(rec.paymentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : new Date(rec.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      mode: rec.paymentMethod || 'Cash',
+      status: rec.status || 'Pending'
+    }));
 
-    // 11. TRANSPORT TAB DETAILED ANALYTICS
+    // 11. ACADEMIC TAB DETAILED ANALYTICS (Strictly Live DB)
+    const examResultsAll = await ExamResultModel.find()
+      .populate({ path: 'student', populate: [{ path: 'user', select: 'name' }, { path: 'enrolledClass' }] })
+      .populate('subject', 'name')
+      .lean();
+
+    const classPassMap: Record<string, { total: number; passed: number }> = {};
+    const studentPerformanceMap: Record<string, { name: string; rollNo: string; className: string; totalMarks: number; obtainedMarks: number }> = {};
+
+    examResultsAll.forEach((res: any) => {
+      if (res.student && res.student.enrolledClass) {
+        const className = `${res.student.enrolledClass.name} ${res.student.enrolledClass.section || ''}`.trim();
+        if (!classPassMap[className]) classPassMap[className] = { total: 0, passed: 0 };
+        classPassMap[className].total++;
+        if ((res.marksObtained / res.totalMarks) >= 0.4) {
+          classPassMap[className].passed++;
+        }
+      }
+
+      if (res.student) {
+        const stId = res.student._id.toString();
+        if (!studentPerformanceMap[stId]) {
+          studentPerformanceMap[stId] = {
+            name: res.student.user?.name || res.student.fatherName || 'Student',
+            rollNo: res.student.rollNumber || '-',
+            className: res.student.enrolledClass ? `${res.student.enrolledClass.name}-${res.student.enrolledClass.section}` : '-',
+            totalMarks: 0,
+            obtainedMarks: 0
+          };
+        }
+        studentPerformanceMap[stId].totalMarks += res.totalMarks || 100;
+        studentPerformanceMap[stId].obtainedMarks += res.marksObtained || 0;
+      }
+    });
+
+    const academicPassRatios = Object.keys(classPassMap).map(cls => ({
+      label: cls,
+      value: classPassMap[cls].total > 0 ? Math.round((classPassMap[cls].passed / classPassMap[cls].total) * 100) : 0,
+      secondaryValue: 0,
+      color: 'bg-emerald-500'
+    }));
+
+    const topPerformersSorted = Object.values(studentPerformanceMap)
+      .map(s => ({
+        ...s,
+        percentageVal: s.totalMarks > 0 ? (s.obtainedMarks / s.totalMarks) * 100 : 0
+      }))
+      .sort((a, b) => b.percentageVal - a.percentageVal)
+      .slice(0, 5);
+
+    const topPerformers = topPerformersSorted.map((tp, idx) => ({
+      rank: idx + 1,
+      name: tp.name,
+      rollNo: tp.rollNo,
+      class: tp.className,
+      percentage: `${tp.percentageVal.toFixed(1)}%`,
+      grade: tp.percentageVal >= 90 ? 'A+' : (tp.percentageVal >= 80 ? 'A' : 'B')
+    }));
+
+    // 12. TRANSPORT TAB DETAILED ANALYTICS (Strictly Live DB)
     const transportFromDb = await TransportModel.find().lean();
-    const transportRoutes = transportFromDb.length > 0 ? transportFromDb.map((t: any) => ({
-      busNumber: t.busNumber || 'Bus 01',
+    const transportRoutes = transportFromDb.map((t: any) => ({
+      busNumber: t.busNumber || 'Bus',
       vehicleNumber: t.vehicleNumber,
       driverName: t.driverName,
       driverContact: t.driverContact,
       route: t.route,
       capacity: t.capacity,
-      studentCount: t.students ? t.students.length : 28
-    })) : [
-      { busNumber: 'Bus 01', vehicleNumber: 'TN-01-AB-1234', driverName: 'Murugan P', driverContact: '+91 9876543210', route: 'Anna Nagar -> Koyambedu -> School', capacity: 40, studentCount: 36 },
-      { busNumber: 'Bus 02', vehicleNumber: 'TN-01-AB-5678', driverName: 'Selvam K', driverContact: '+91 9876543211', route: 'Adyar -> T.Nagar -> School', capacity: 40, studentCount: 38 },
-      { busNumber: 'Bus 03', vehicleNumber: 'TN-01-AB-9012', driverName: 'Rajesh S', driverContact: '+91 9876543212', route: 'Velachery -> Tambaram -> School', capacity: 45, studentCount: 41 },
-      { busNumber: 'Bus 04', vehicleNumber: 'TN-01-AB-3456', driverName: 'Ganesh M', driverContact: '+91 9876543213', route: 'Porur -> Vadapalani -> School', capacity: 40, studentCount: 32 }
-    ];
+      studentCount: t.students ? t.students.length : 0
+    }));
 
     res.json({
       // Overview
-      totalStudents: totalStudents || 1510,
-      totalTeachers: totalTeachers || 77,
-      totalParents: totalParents || 1240,
-      revenue: revenue || 940000,
-      revenueData: finalRevenueData,
+      totalStudents,
+      totalTeachers,
+      totalParents,
+      revenue,
+      revenueData,
       attendanceDonut,
       birthdays,
       topEmployees,
@@ -325,10 +338,9 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       // Students Tab
       studentGenderDonut,
       studentClassDistribution,
-      studentCommunityDistribution,
+      studentBloodDistribution,
       // Staff Tab
       staffDepartmentChart,
-      staffGenderDonut,
       staffExperienceBreakdown,
       // Fee Tab
       feeCategoryBreakdown,

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { CustomBarChart, CustomDonutChart } from '@/components/molecules/Charts';
 import { 
   Users, Briefcase, GraduationCap, DollarSign, CalendarCheck, 
-  Cake, Award, Bell, Calendar, Bus, BookOpen, UserCheck, ShieldCheck, CheckCircle2, ChevronRight, Phone
+  Cake, Award, Bell, Calendar, Bus, BookOpen, CheckCircle2, Phone, Inbox
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -25,9 +25,8 @@ export default function AdminDashboard() {
     noticeBoard: [],
     studentGenderDonut: [],
     studentClassDistribution: [],
-    studentCommunityDistribution: [],
+    studentBloodDistribution: [],
     staffDepartmentChart: [],
-    staffGenderDonut: [],
     staffExperienceBreakdown: [],
     feeCategoryBreakdown: [],
     recentFeeReceipts: [],
@@ -41,7 +40,7 @@ export default function AdminDashboard() {
       .then(res => setStats(res.data))
       .catch((err) => {
         console.error(err);
-        setError('Failed to load dashboard data. Please verify your backend server connection.');
+        setError('Failed to load dashboard data from backend server.');
       });
   }, []);
 
@@ -69,7 +68,7 @@ export default function AdminDashboard() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Super Admin ERP Dashboard</h1>
-          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mt-1">Multi-Tab School Performance & Operational Analytics</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mt-1">Real Database Analytics & Operational Metrics</p>
         </div>
       </div>
 
@@ -154,14 +153,14 @@ export default function AdminDashboard() {
               <CustomBarChart
                 data={stats.revenueData || []}
                 title="Monthly Fee Collection Analytics"
-                subtitle="Green: Collected ($) | Grey: Pending ($)"
+                subtitle="Green: Realized Collection ($) | Grey: Outstanding Balance ($)"
               />
             </div>
             <div>
               <CustomDonutChart
                 data={stats.attendanceDonut || []}
                 title="Daily Attendance Ratio"
-                subtitle="Real-time today's student attendance breakdown"
+                subtitle="Today's live attendance breakdown"
                 totalLabel="Students"
               />
             </div>
@@ -178,30 +177,34 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Today's Birthdays</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Celebrate student & staff birthdays today</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Student & staff birthdays today</p>
                   </div>
                 </div>
 
-                <div className="space-y-3 mt-4">
-                  {(stats.birthdays || []).map((person: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
-                      <div className="flex items-center gap-3">
-                        <img src={person.avatar} alt={person.name} className="w-10 h-10 rounded-full object-cover border-2 border-indigo-500/30" />
-                        <div>
-                          <p className="text-xs font-bold text-slate-900 dark:text-white">{person.name}</p>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">{person.role} ({person.class})</span>
+                {(!stats.birthdays || stats.birthdays.length === 0) ? (
+                  <div className="py-8 text-center text-slate-400 dark:text-slate-500">
+                    <Cake className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs font-semibold">No birthdays today</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 mt-4">
+                    {stats.birthdays.map((person: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
+                        <div className="flex items-center gap-3">
+                          <img src={person.avatar} alt={person.name} className="w-10 h-10 rounded-full object-cover border-2 border-indigo-500/30" />
+                          <div>
+                            <p className="text-xs font-bold text-slate-900 dark:text-white">{person.name}</p>
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">{person.role} ({person.class})</span>
+                          </div>
                         </div>
                       </div>
-                      <button className="px-3 py-1 text-[11px] font-bold rounded-lg bg-pink-500 hover:bg-pink-600 text-white shadow-sm transition">
-                        Wish 🎂
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Top 5 Employee Report Table */}
+            {/* Top Employee Report Table */}
             <div className="lg:col-span-2 soft-card p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -209,36 +212,43 @@ export default function AdminDashboard() {
                     <Award className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Top 5 Employee Report</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">High performing faculty & academic staff members</p>
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Academic Faculty Staff</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Registered staff profiles in system</p>
                   </div>
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                      <th className="py-2.5 px-3">Emp ID</th>
-                      <th className="py-2.5 px-3">Name</th>
-                      <th className="py-2.5 px-3">Designation</th>
-                      <th className="py-2.5 px-3">Department</th>
-                      <th className="py-2.5 px-3 text-right">Rating</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {(stats.topEmployees || []).map((emp: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                        <td className="py-3 px-3 font-mono text-indigo-600 dark:text-indigo-400">{emp.id}</td>
-                        <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">{emp.name}</td>
-                        <td className="py-3 px-3">{emp.designation}</td>
-                        <td className="py-3 px-3">{emp.department}</td>
-                        <td className="py-3 px-3 text-right font-black text-emerald-600 dark:text-emerald-400">{emp.rating}</td>
+              {(!stats.topEmployees || stats.topEmployees.length === 0) ? (
+                <div className="py-8 text-center text-slate-400 dark:text-slate-500">
+                  <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-xs font-semibold">No staff profiles registered yet</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+                        <th className="py-2.5 px-3">Emp ID</th>
+                        <th className="py-2.5 px-3">Name</th>
+                        <th className="py-2.5 px-3">Designation</th>
+                        <th className="py-2.5 px-3">Department</th>
+                        <th className="py-2.5 px-3 text-right">Experience</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      {stats.topEmployees.map((emp: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-3 px-3 font-mono text-indigo-600 dark:text-indigo-400">{emp.id}</td>
+                          <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">{emp.name}</td>
+                          <td className="py-3 px-3">{emp.designation}</td>
+                          <td className="py-3 px-3">{emp.department}</td>
+                          <td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{emp.experience}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 
@@ -256,20 +266,27 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {(stats.upcomingEvents || []).map((ev: any, idx: number) => (
-                  <div key={idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">{ev.title}</h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{ev.description}</p>
+              {(!stats.upcomingEvents || stats.upcomingEvents.length === 0) ? (
+                <div className="py-8 text-center text-slate-400 dark:text-slate-500">
+                  <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-xs font-semibold">No upcoming events scheduled</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {stats.upcomingEvents.map((ev: any, idx: number) => (
+                    <div key={idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">{ev.title}</h4>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{ev.description}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 block mb-1">{ev.type}</span>
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">{ev.date}</span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 block mb-1">{ev.type}</span>
-                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">{ev.date}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Notice Board */}
@@ -284,18 +301,25 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {(stats.noticeBoard || []).map((nt: any, idx: number) => (
-                  <div key={idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">{nt.title}</h4>
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">{nt.audience}</span>
+              {(!stats.noticeBoard || stats.noticeBoard.length === 0) ? (
+                <div className="py-8 text-center text-slate-400 dark:text-slate-500">
+                  <Bell className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-xs font-semibold">No active notices posted</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {stats.noticeBoard.map((nt: any, idx: number) => (
+                    <div key={idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">{nt.title}</h4>
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">{nt.audience}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400">{nt.content}</p>
+                      <span className="text-[10px] text-slate-400 block mt-2">{nt.date}</span>
                     </div>
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400">{nt.content}</p>
-                    <span className="text-[10px] text-slate-400 block mt-2">{nt.date}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -317,48 +341,33 @@ export default function AdminDashboard() {
               <CustomBarChart
                 data={stats.studentClassDistribution || []}
                 title="Class-Wise Student Distribution"
-                subtitle="Enrolment breakdown across primary & secondary grades"
+                subtitle="Enrolment breakdown across enrolled classes"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="soft-card p-6">
-              <CustomDonutChart
-                data={stats.studentCommunityDistribution || []}
-                title="Category / Community Breakdown"
-                subtitle="Distribution across General, OBC, SC/ST categories"
-                totalLabel="Category"
-              />
-            </div>
+          <div className="soft-card p-6">
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-2">Student Health & Blood Group Distribution</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Real student medical record blood group breakdown</p>
 
-            <div className="soft-card p-6 flex flex-col justify-between">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-2">Student Health & Blood Group Distribution</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Medical records blood group counts for emergency quick access</p>
-
-                <div className="grid grid-cols-4 gap-4">
-                  {[
-                    { bg: 'O+', count: 480, color: 'bg-rose-500' },
-                    { bg: 'A+', count: 390, color: 'bg-indigo-500' },
-                    { bg: 'B+', count: 410, color: 'bg-purple-500' },
-                    { bg: 'AB+', count: 120, color: 'bg-emerald-500' },
-                    { bg: 'O-', count: 45, color: 'bg-rose-600' },
-                    { bg: 'A-', count: 30, color: 'bg-indigo-600' },
-                    { bg: 'B-', count: 25, color: 'bg-purple-600' },
-                    { bg: 'AB-', count: 10, color: 'bg-emerald-600' },
-                  ].map((item, idx) => (
-                    <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 text-center">
-                      <span className={`w-8 h-8 mx-auto rounded-full ${item.color} text-white font-extrabold text-xs flex items-center justify-center shadow-md mb-2`}>
-                        {item.bg}
-                      </span>
-                      <p className="text-lg font-black text-slate-900 dark:text-white">{item.count}</p>
-                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Students</p>
-                    </div>
-                  ))}
-                </div>
+            {(!stats.studentBloodDistribution || stats.studentBloodDistribution.length === 0) ? (
+              <div className="py-8 text-center text-slate-400 dark:text-slate-500">
+                <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <p className="text-xs font-semibold">No blood group records available</p>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {stats.studentBloodDistribution.map((item: any, idx: number) => (
+                  <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 text-center">
+                    <span className="w-8 h-8 mx-auto rounded-full bg-rose-500 text-white font-extrabold text-xs flex items-center justify-center shadow-md mb-2">
+                      {item.bg}
+                    </span>
+                    <p className="text-lg font-black text-slate-900 dark:text-white">{item.count}</p>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Students</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -366,46 +375,29 @@ export default function AdminDashboard() {
       {/* TAB 3: EMPLOYEES (STAFF) */}
       {activeTab === 'employees' && (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="soft-card p-6">
               <CustomBarChart
                 data={stats.staffDepartmentChart || []}
                 title="Department Distribution"
                 subtitle="Faculty allocation across academic departments"
               />
             </div>
-            <div>
-              <CustomDonutChart
-                data={stats.staffGenderDonut || []}
-                title="Staff Gender Ratio"
-                subtitle="Female vs Male Staff Ratio"
-                totalLabel="Staff"
-              />
-            </div>
-          </div>
+            <div className="soft-card p-6">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-2">Staff Teaching Experience Breakdown</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Recorded experience levels of faculty members</p>
 
-          <div className="soft-card p-6">
-            <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-2">Staff Teaching Experience Breakdown</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Experience level metrics of faculty members</p>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {[
-                { exp: '0 - 2 Years', count: '15 Staff', percentage: '19.4%', color: 'from-blue-500 to-indigo-600' },
-                { exp: '3 - 5 Years', count: '28 Staff', percentage: '36.3%', color: 'from-indigo-500 to-purple-600' },
-                { exp: '6 - 10 Years', count: '22 Staff', percentage: '28.5%', color: 'from-purple-500 to-pink-600' },
-                { exp: '10+ Years', count: '12 Staff', percentage: '15.8%', color: 'from-emerald-500 to-teal-600' },
-              ].map((item, idx) => (
-                <div key={idx} className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 flex flex-col justify-between">
-                  <div>
-                    <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-lg text-white bg-gradient-to-r ${item.color} shadow-sm inline-block mb-3`}>
+              <div className="grid grid-cols-2 gap-4">
+                {(stats.staffExperienceBreakdown || []).map((item: any, idx: number) => (
+                  <div key={idx} className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60">
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 inline-block mb-2">
                       Experience
                     </span>
-                    <h4 className="text-xl font-black text-slate-900 dark:text-white">{item.exp}</h4>
-                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">{item.count}</p>
+                    <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">{item.label}</h4>
+                    <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">{item.value} Staff</p>
                   </div>
-                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-4">Share: {item.percentage}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -426,7 +418,7 @@ export default function AdminDashboard() {
               <CustomDonutChart
                 data={stats.feeCategoryBreakdown || []}
                 title="Fee Category Share"
-                subtitle="Revenue distribution by fee types"
+                subtitle="Revenue distribution by fee categories"
                 totalLabel="Categories"
               />
             </div>
@@ -436,43 +428,50 @@ export default function AdminDashboard() {
           <div className="soft-card p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Recent Fee Collection Receipts</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Real-time payment transactions recorded in the system</p>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Fee Transactions</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Payment records saved in system</p>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                    <th className="py-3 px-4">Receipt No</th>
-                    <th className="py-3 px-4">Student Name</th>
-                    <th className="py-3 px-4">Roll No</th>
-                    <th className="py-3 px-4">Amount Paid</th>
-                    <th className="py-3 px-4">Payment Method</th>
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4 text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {(stats.recentFeeReceipts || []).map((rec: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">{rec.receiptNo}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{rec.studentName}</td>
-                      <td className="py-3.5 px-4 font-mono">{rec.rollNo}</td>
-                      <td className="py-3.5 px-4 font-black text-emerald-600 dark:text-emerald-400">{rec.amount}</td>
-                      <td className="py-3.5 px-4">{rec.mode}</td>
-                      <td className="py-3.5 px-4 text-slate-500">{rec.date}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
-                          <CheckCircle2 className="w-3 h-3" /> Paid
-                        </span>
-                      </td>
+            {(!stats.recentFeeReceipts || stats.recentFeeReceipts.length === 0) ? (
+              <div className="py-8 text-center text-slate-400 dark:text-slate-500">
+                <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <p className="text-xs font-semibold">No fee payment receipts recorded yet</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+                      <th className="py-3 px-4">Receipt No</th>
+                      <th className="py-3 px-4">Student Name</th>
+                      <th className="py-3 px-4">Roll No</th>
+                      <th className="py-3 px-4">Amount Paid</th>
+                      <th className="py-3 px-4">Payment Method</th>
+                      <th className="py-3 px-4">Date</th>
+                      <th className="py-3 px-4 text-right">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {stats.recentFeeReceipts.map((rec: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                        <td className="py-3.5 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">{rec.receiptNo}</td>
+                        <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{rec.studentName}</td>
+                        <td className="py-3.5 px-4 font-mono">{rec.rollNo}</td>
+                        <td className="py-3.5 px-4 font-black text-emerald-600 dark:text-emerald-400">{rec.amount}</td>
+                        <td className="py-3.5 px-4">{rec.mode}</td>
+                        <td className="py-3.5 px-4 text-slate-500">{rec.date}</td>
+                        <td className="py-3.5 px-4 text-right">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+                            <CheckCircle2 className="w-3 h-3" /> {rec.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -480,84 +479,57 @@ export default function AdminDashboard() {
       {/* TAB 5: ACADEMIC */}
       {activeTab === 'academic' && (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="soft-card p-6">
               <CustomBarChart
                 data={stats.academicPassRatios || []}
-                title="Class Examination Pass Percentage (%)"
-                subtitle="Grade-wise student academic passing statistics"
+                title="Class Pass Ratio (%)"
+                subtitle="Real examination pass percentage by class"
               />
             </div>
 
-            <div className="soft-card p-6 flex flex-col justify-between">
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white mb-2">Subject Performance Matrix</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Average score percentage by subject</p>
-
-                <div className="space-y-4">
-                  {[
-                    { subject: 'Mathematics', avg: '88%', color: 'bg-indigo-500' },
-                    { subject: 'Science & Physics', avg: '92%', color: 'bg-emerald-500' },
-                    { subject: 'English Literature', avg: '95%', color: 'bg-violet-500' },
-                    { subject: 'Tamil', avg: '94%', color: 'bg-amber-500' },
-                    { subject: 'Social Studies', avg: '89%', color: 'bg-pink-500' },
-                  ].map((sub, idx) => (
-                    <div key={idx}>
-                      <div className="flex justify-between text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        <span>{sub.subject}</span>
-                        <span className="text-indigo-600 dark:text-indigo-400">{sub.avg}</span>
-                      </div>
-                      <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                        <div className={`h-full ${sub.color}`} style={{ width: sub.avg }} />
-                      </div>
-                    </div>
-                  ))}
+            <div className="soft-card p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Top Performing Students</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Exam performance records</p>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Top Performing Students */}
-          <div className="soft-card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60">
-                <Award className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Top Performing Students</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Highest academic scorers across all examination terms</p>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                    <th className="py-3 px-4">Rank</th>
-                    <th className="py-3 px-4">Student Name</th>
-                    <th className="py-3 px-4">Roll No</th>
-                    <th className="py-3 px-4">Class</th>
-                    <th className="py-3 px-4">Marks %</th>
-                    <th className="py-3 px-4 text-right">Grade</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {(stats.topPerformers || []).map((tp: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                      <td className="py-3.5 px-4 font-black text-amber-500">#{tp.rank}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{tp.name}</td>
-                      <td className="py-3.5 px-4 font-mono">{tp.rollNo}</td>
-                      <td className="py-3.5 px-4">{tp.class}</td>
-                      <td className="py-3.5 px-4 font-black text-emerald-600 dark:text-emerald-400">{tp.percentage}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60">
-                          {tp.grade}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {(!stats.topPerformers || stats.topPerformers.length === 0) ? (
+                <div className="py-8 text-center text-slate-400 dark:text-slate-500">
+                  <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-xs font-semibold">No examination results evaluated yet</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+                        <th className="py-2.5 px-3">Rank</th>
+                        <th className="py-2.5 px-3">Student Name</th>
+                        <th className="py-2.5 px-3">Roll No</th>
+                        <th className="py-2.5 px-3">Class</th>
+                        <th className="py-2.5 px-3 text-right">Marks %</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      {stats.topPerformers.map((tp: any, idx: number) => (
+                        <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                          <td className="py-3 px-3 font-black text-amber-500">#{tp.rank}</td>
+                          <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">{tp.name}</td>
+                          <td className="py-3 px-3 font-mono">{tp.rollNo}</td>
+                          <td className="py-3 px-3">{tp.class}</td>
+                          <td className="py-3 px-3 text-right font-black text-emerald-600 dark:text-emerald-400">{tp.percentage}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -566,31 +538,6 @@ export default function AdminDashboard() {
       {/* TAB 6: TRANSPORT */}
       {activeTab === 'transport' && (
         <div className="space-y-8">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Fleet Vehicles</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">12 Buses</p>
-              <p className="text-[11px] font-semibold text-emerald-600 mt-1">100% Operational</p>
-            </div>
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Active Routes</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">15 Routes</p>
-              <p className="text-[11px] font-semibold text-indigo-600 mt-1">City Wide Coverage</p>
-            </div>
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Transport Students</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">420 Students</p>
-              <p className="text-[11px] font-semibold text-purple-600 mt-1">Daily Commuters</p>
-            </div>
-            <div className="soft-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Driver & Support Staff</p>
-              <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">14 Staff</p>
-              <p className="text-[11px] font-semibold text-emerald-600 mt-1">Licensed Drivers</p>
-            </div>
-          </div>
-
-          {/* Transport Routes Table */}
           <div className="soft-card p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
@@ -598,38 +545,45 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Transport Fleet & Route Allocation</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">School bus routes, assigned drivers, and student capacity details</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Registered transport vehicles & driver contacts in database</p>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                    <th className="py-3 px-4">Bus No</th>
-                    <th className="py-3 px-4">Vehicle Reg No</th>
-                    <th className="py-3 px-4">Driver Name</th>
-                    <th className="py-3 px-4">Contact</th>
-                    <th className="py-3 px-4">Route Details</th>
-                    <th className="py-3 px-4 text-right">Occupancy / Capacity</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {(stats.transportRoutes || []).map((tr: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                      <td className="py-3.5 px-4 font-black text-indigo-600 dark:text-indigo-400">{tr.busNumber}</td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">{tr.vehicleNumber}</td>
-                      <td className="py-3.5 px-4">{tr.driverName}</td>
-                      <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1.5"><Phone className="w-3 h-3 text-emerald-500" /> {tr.driverContact}</td>
-                      <td className="py-3.5 px-4">{tr.route}</td>
-                      <td className="py-3.5 px-4 text-right font-bold text-indigo-600 dark:text-indigo-400">
-                        {tr.studentCount} / {tr.capacity}
-                      </td>
+            {(!stats.transportRoutes || stats.transportRoutes.length === 0) ? (
+              <div className="py-12 text-center text-slate-400 dark:text-slate-500">
+                <Bus className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                <p className="text-xs font-semibold">No transport routes or vehicles registered in database</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+                      <th className="py-3 px-4">Bus No</th>
+                      <th className="py-3 px-4">Vehicle Reg No</th>
+                      <th className="py-3 px-4">Driver Name</th>
+                      <th className="py-3 px-4">Contact</th>
+                      <th className="py-3 px-4">Route Details</th>
+                      <th className="py-3 px-4 text-right">Occupancy / Capacity</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {stats.transportRoutes.map((tr: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                        <td className="py-3.5 px-4 font-black text-indigo-600 dark:text-indigo-400">{tr.busNumber}</td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">{tr.vehicleNumber}</td>
+                        <td className="py-3.5 px-4">{tr.driverName}</td>
+                        <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1.5"><Phone className="w-3 h-3 text-emerald-500" /> {tr.driverContact}</td>
+                        <td className="py-3.5 px-4">{tr.route}</td>
+                        <td className="py-3.5 px-4 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                          {tr.studentCount} / {tr.capacity}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
