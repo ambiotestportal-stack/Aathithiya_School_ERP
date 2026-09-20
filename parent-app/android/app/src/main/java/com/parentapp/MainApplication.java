@@ -50,6 +50,25 @@ public class MainApplication extends Application implements ReactApplication {
   @Override
   public void onCreate() {
     super.onCreate();
+
+    // Catch any native or RN crash and display it on CrashDisplayActivity instead of closing
+    Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+      @Override
+      public void uncaughtException(Thread thread, Throwable throwable) {
+        android.util.Log.e("ParentAppCrash", "FATAL CRASH:", throwable);
+        try {
+          android.content.Intent intent = new android.content.Intent(MainApplication.this, CrashDisplayActivity.class);
+          intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+          intent.putExtra("error", android.util.Log.getStackTraceString(throwable));
+          startActivity(intent);
+        } catch (Exception e) {
+          android.util.Log.e("ParentAppCrash", "Failed to launch crash activity", e);
+        }
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(10);
+      }
+    });
+
     SoLoader.init(this, /* native exopackage */ false);
   }
 }

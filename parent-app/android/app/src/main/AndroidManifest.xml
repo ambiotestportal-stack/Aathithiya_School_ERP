@@ -25,5 +25,11 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <activity
+        android:name=".CrashDisplayActivity"
+        android:label="Application Diagnostic Log"
+        android:theme="@style/AppTheme"
+        android:exported="false" />
     </application>
 </manifest>
