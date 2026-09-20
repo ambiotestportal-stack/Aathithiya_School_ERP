@@ -1,56 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
   Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import api from '../config/api';
 
-interface FeeItem {
+interface FeeRecord {
   id: string;
   category: string;
   dueDate: string;
   amount: number;
   paidAmount: number;
-  status: 'Paid' | 'Pending' | 'Partial';
+  status: 'Paid' | 'Pending' | 'Partial' | 'Overdue';
 }
 
-interface PaymentReceipt {
-  id: string;
-  receiptNo: string;
-  date: string;
-  amount: number;
-  mode: string;
-  category: string;
-}
-
-export const FeesScreen = () => {
+export const FeesScreen = ({ navigation }: any) => {
   const { selectedStudent } = useAuth();
-  const [activeTab, setActiveTab] = useState<'pending' | 'receipts'>('pending');
+  const [loading, setLoading] = useState(false);
+  const [feeItems, setFeeItems] = useState<FeeRecord[]>([]);
 
-  const feeItems: FeeItem[] = [
-    { id: '1', category: 'Term 2 Tuition Fee', dueDate: '30 Oct 2026', amount: 25000, paidAmount: 0, status: 'Pending' },
-    { id: '2', category: 'Transport Fee (Q3)', dueDate: '15 Nov 2026', amount: 6500, paidAmount: 0, status: 'Pending' },
-    { id: '3', category: 'Annual Sports & Activity', dueDate: '05 Sep 2026', amount: 3500, paidAmount: 3500, status: 'Paid' },
-    { id: '4', category: 'Term 1 Tuition Fee', dueDate: '10 Jun 2026', amount: 25000, paidAmount: 25000, status: 'Paid' },
-  ];
+  useEffect(() => {
+    fetchRealFees();
+  }, [selectedStudent]);
 
-  const paymentReceipts: PaymentReceipt[] = [
-    { id: 'r1', receiptNo: 'REC-2026-0982', date: '04 Sep 2026', amount: 3500, mode: 'UPI / GPay', category: 'Sports & Activity' },
-    { id: 'r2', receiptNo: 'REC-2026-0412', date: '08 Jun 2026', amount: 25000, mode: 'Net Banking', category: 'Term 1 Tuition Fee' },
-    { id: 'r3', receiptNo: 'REC-2026-0105', date: '12 Apr 2026', amount: 6500, mode: 'Credit Card', category: 'Transport Fee (Q1)' },
-  ];
+  const fetchRealFees = async () => {
+    setLoading(true);
+    try {
+      if (selectedStudent && selectedStudent.id) {
+        const studentId = selectedStudent.id || (selectedStudent as any)._id;
+        const res = await api.get(`/api/finance/fees?studentId=${studentId}`).catch(() => ({ data: [] }));
+
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped: FeeRecord[] = res.data.map((item: any, idx: number) => ({
+            id: item._id || String(idx),
+            category: item.feeType || item.category || 'Tuition Fee',
+            dueDate: item.dueDate
+              ? new Date(item.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+              : 'End of Term',
+            amount: Number(item.amount) || 0,
+            paidAmount: Number(item.paidAmount) || 0,
+            status: item.status || (item.paidAmount >= item.amount ? 'Paid' : 'Pending'),
+          }));
+          setFeeItems(mapped);
+        } else {
+          setFeeItems([]);
+        }
+      }
+    } catch (e) {
+      console.log('Error fetching fee data:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const totalAmount = feeItems.reduce((acc, curr) => acc + curr.amount, 0);
   const totalPaid = feeItems.reduce((acc, curr) => acc + curr.paidAmount, 0);
   const totalPending = totalAmount - totalPaid;
 
-  const handlePayNow = (item: FeeItem) => {
+  const handlePayNow = (item: FeeRecord) => {
     Alert.alert(
       'Online Payment Gateway',
       `Proceed to pay ₹${(item.amount - item.paidAmount).toLocaleString('en-IN')} for ${item.category}?`,
@@ -58,136 +72,97 @@ export const FeesScreen = () => {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Proceed to Pay',
-          onPress: () => Alert.alert('Success', 'Payment simulated successfully! Receipt generated.'),
+          onPress: () => Alert.alert('Payment Portal', 'Online payment simulation complete.'),
         },
       ]
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E293B" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Fee Management</Text>
-        <Text style={styles.headerSubtitle}>
-          {selectedStudent ? `${selectedStudent.name} (${selectedStudent.admissionNo})` : 'Fee Details'}
-        </Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchRealFees} colors={['#10B981']} />}
+    >
+      {/* Fee Summary Card */}
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryLabel}>TOTAL OUTSTANDING DUES</Text>
+        <Text style={styles.summaryPendingAmount}>₹{totalPending.toLocaleString('en-IN')}</Text>
+
+        <View style={styles.summaryDivider} />
+
+        <View style={styles.summaryRow}>
+          <View>
+            <Text style={styles.summarySubLabel}>Total Annual Fee</Text>
+            <Text style={styles.summarySubVal}>₹{totalAmount.toLocaleString('en-IN')}</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.summarySubLabel}>Total Paid</Text>
+            <Text style={[styles.summarySubVal, { color: '#10B981' }]}>
+              ₹{totalPaid.toLocaleString('en-IN')}
+            </Text>
+          </View>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Summary Card */}
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>Total Due Balance</Text>
-          <Text style={styles.summaryPendingAmount}>₹{totalPending.toLocaleString('en-IN')}</Text>
+      {/* Fee Invoices List */}
+      <Text style={styles.sectionHeading}>Invoices & Dues</Text>
 
-          <View style={styles.summaryDivider} />
-
-          <View style={styles.summaryRow}>
-            <View>
-              <Text style={styles.summarySubLabel}>Total Annual Fee</Text>
-              <Text style={styles.summarySubVal}>₹{totalAmount.toLocaleString('en-IN')}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.summarySubLabel}>Total Paid</Text>
-              <Text style={[styles.summarySubVal, { color: '#10B981' }]}>₹{totalPaid.toLocaleString('en-IN')}</Text>
-            </View>
-          </View>
+      {loading ? (
+        <ActivityIndicator size="small" color="#10B981" style={{ marginVertical: 20 }} />
+      ) : feeItems.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyIcon}>🎉</Text>
+          <Text style={styles.emptyTitle}>All Dues Cleared</Text>
+          <Text style={styles.emptyText}>
+            No outstanding fee invoices pending for {selectedStudent?.name || 'this student'}. Official school invoices will sync here in real time.
+          </Text>
         </View>
-
-        {/* Tab Switcher */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'pending' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('pending')}
-          >
-            <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>
-              Fee Structure ({feeItems.filter(i => i.status !== 'Paid').length})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'receipts' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('receipts')}
-          >
-            <Text style={[styles.tabText, activeTab === 'receipts' && styles.tabTextActive]}>
-              Payment History ({paymentReceipts.length})
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Tab Content */}
-        {activeTab === 'pending' ? (
-          <View>
-            {feeItems.map((item) => {
-              const isPaid = item.status === 'Paid';
-              return (
-                <View key={item.id} style={styles.feeCard}>
-                  <View style={styles.feeHeader}>
-                    <Text style={styles.feeCategory}>{item.category}</Text>
-                    <View
-                      style={[
-                        styles.badge,
-                        { backgroundColor: isPaid ? '#E6F4EA' : '#FEF3C7' },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.badgeText,
-                          { color: isPaid ? '#137333' : '#D97706' },
-                        ]}
-                      >
-                        {item.status}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.feeDetailsRow}>
-                    <Text style={styles.feeDueText}>Due Date: {item.dueDate}</Text>
-                    <Text style={styles.feeAmount}>₹{item.amount.toLocaleString('en-IN')}</Text>
-                  </View>
-
-                  {!isPaid && (
-                    <TouchableOpacity
-                      style={styles.payBtn}
-                      onPress={() => handlePayNow(item)}
-                    >
-                      <Text style={styles.payBtnText}>Pay Now ₹{(item.amount - item.paidAmount).toLocaleString('en-IN')}</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              );
-            })}
-          </View>
-        ) : (
-          <View>
-            {paymentReceipts.map((receipt) => (
-              <View key={receipt.id} style={styles.receiptCard}>
-                <View style={styles.receiptTop}>
-                  <View>
-                    <Text style={styles.receiptNo}>{receipt.receiptNo}</Text>
-                    <Text style={styles.receiptCategory}>{receipt.category}</Text>
-                  </View>
-                  <Text style={styles.receiptAmount}>₹{receipt.amount.toLocaleString('en-IN')}</Text>
-                </View>
-
-                <View style={styles.receiptBottom}>
-                  <Text style={styles.receiptMeta}>Date: {receipt.date}</Text>
-                  <Text style={styles.receiptMeta}>Mode: {receipt.mode}</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.downloadBtn}
-                  onPress={() => Alert.alert('Download Receipt', `Downloading PDF receipt ${receipt.receiptNo}...`)}
-                >
-                  <Text style={styles.downloadBtnText}>📄 Download PDF Receipt</Text>
-                </TouchableOpacity>
+      ) : (
+        feeItems.map((item) => (
+          <View key={item.id} style={styles.feeCard}>
+            <View style={styles.feeCardTop}>
+              <View>
+                <Text style={styles.feeCategory}>{item.category}</Text>
+                <Text style={styles.feeDueDate}>Due: {item.dueDate}</Text>
               </View>
-            ))}
+              <View
+                style={[
+                  styles.statusBadge,
+                  item.status === 'Paid' ? styles.statusBadgePaid : styles.statusBadgePending,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusBadgeText,
+                    item.status === 'Paid' ? styles.statusTextPaid : styles.statusTextPending,
+                  ]}
+                >
+                  {item.status}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.feeCardBottom}>
+              <View>
+                <Text style={styles.amountLabel}>Total Amount</Text>
+                <Text style={styles.amountVal}>₹{item.amount.toLocaleString('en-IN')}</Text>
+              </View>
+
+              {item.status !== 'Paid' && (
+                <TouchableOpacity
+                  style={styles.payBtn}
+                  onPress={() => handlePayNow(item)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.payBtnText}>Pay ₹{(item.amount - item.paidAmount).toLocaleString('en-IN')}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+        ))
+      )}
+    </ScrollView>
   );
 };
 
@@ -196,212 +171,156 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  header: {
-    backgroundColor: '#1E293B',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  headerTitle: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
-    color: '#94A3B8',
-    fontSize: 14,
-    marginTop: 4,
-  },
   scrollContent: {
     padding: 16,
     paddingBottom: 40,
   },
   summaryCard: {
-    backgroundColor: '#2563EB',
-    borderRadius: 16,
+    backgroundColor: '#1E293B',
+    borderRadius: 20,
     padding: 20,
     marginBottom: 20,
     elevation: 4,
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
   },
   summaryLabel: {
-    color: '#93C5FD',
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.0,
   },
   summaryPendingAmount: {
     color: '#FFFFFF',
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: '900',
     marginTop: 4,
+    marginBottom: 16,
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    marginVertical: 16,
+    backgroundColor: '#334155',
+    marginBottom: 14,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   summarySubLabel: {
-    color: '#BFDBFE',
-    fontSize: 12,
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '600',
   },
   summarySubVal: {
-    color: '#FFFFFF',
+    color: '#F8FAFC',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
     marginTop: 2,
   },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#E2E8F0',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 16,
+  sectionHeading: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 12,
   },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  tabButtonActive: {
+  emptyCard: {
     backgroundColor: '#FFFFFF',
-    elevation: 2,
+    borderRadius: 16,
+    padding: 26,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
+  emptyIcon: {
+    fontSize: 36,
+    marginBottom: 8,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  emptyText: {
+    fontSize: 12,
     color: '#64748B',
-  },
-  tabTextActive: {
-    color: '#1E293B',
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 18,
   },
   feeCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  feeHeader: {
+  feeCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 14,
   },
   feeCategory: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E293B',
-    flex: 1,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
   },
-  badge: {
+  feeDueDate: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 10,
   },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '600',
+  statusBadgePaid: {
+    backgroundColor: '#DCFCE7',
   },
-  feeDetailsRow: {
+  statusBadgePending: {
+    backgroundColor: '#FEE2E2',
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  statusTextPaid: {
+    color: '#15803D',
+  },
+  statusTextPending: {
+    color: '#B91C1C',
+  },
+  feeCardBottom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
+    paddingTop: 12,
   },
-  feeDueText: {
-    fontSize: 13,
+  amountLabel: {
+    fontSize: 11,
     color: '#64748B',
+    fontWeight: '600',
   },
-  feeAmount: {
-    fontSize: 18,
-    fontWeight: '800',
+  amountVal: {
+    fontSize: 16,
+    fontWeight: '900',
     color: '#0F172A',
   },
   payBtn: {
     backgroundColor: '#10B981',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
   },
   payBtnText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  receiptCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#10B981',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  receiptTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  receiptNo: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  receiptCategory: {
     fontSize: 13,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  receiptAmount: {
-    fontSize: 17,
     fontWeight: '800',
-    color: '#10B981',
-  },
-  receiptBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F8FAFC',
-  },
-  receiptMeta: {
-    fontSize: 12,
-    color: '#94A3B8',
-  },
-  downloadBtn: {
-    marginTop: 12,
-    backgroundColor: '#F1F5F9',
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  downloadBtnText: {
-    fontSize: 13,
-    color: '#334155',
-    fontWeight: '600',
   },
 });

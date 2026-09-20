@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import api from '../config/api';
 
 interface SubjectMark {
   subject: string;
@@ -19,165 +19,123 @@ interface SubjectMark {
   status: 'Pass' | 'Fail';
 }
 
-interface ExamTerm {
-  id: string;
-  title: string;
-  date: string;
-  overallPercentage: number;
-  grade: string;
-  rank: string;
-  teacherRemarks: string;
-  subjects: SubjectMark[];
-}
-
-export const AcademicScreen = () => {
+export const AcademicScreen = ({ navigation }: any) => {
   const { selectedStudent } = useAuth();
-  const [selectedTermIndex, setSelectedTermIndex] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
 
-  const examTerms: ExamTerm[] = [
-    {
-      id: 't1',
-      title: 'Term 1 Mid-Year Examination 2026',
-      date: 'August 2026',
-      overallPercentage: 91.4,
-      grade: 'A+',
-      rank: '3rd in Class',
-      teacherRemarks: 'Karthik exhibits exceptional problem-solving skills in Mathematics and Science. Keep up the active participation in discussions!',
-      subjects: [
-        { subject: 'Mathematics', maxMarks: 100, marksObtained: 96, grade: 'O', status: 'Pass' },
-        { subject: 'Physics', maxMarks: 100, marksObtained: 92, grade: 'A+', status: 'Pass' },
-        { subject: 'Chemistry', maxMarks: 100, marksObtained: 88, grade: 'A', status: 'Pass' },
-        { subject: 'English', maxMarks: 100, marksObtained: 90, grade: 'A+', status: 'Pass' },
-        { subject: 'Computer Science', maxMarks: 100, marksObtained: 95, grade: 'O', status: 'Pass' },
-        { subject: 'Social Studies', maxMarks: 100, marksObtained: 87, grade: 'A', status: 'Pass' },
-      ],
-    },
-    {
-      id: 't2',
-      title: 'Quarterly Evaluation Test',
-      date: 'June 2026',
-      overallPercentage: 88.5,
-      grade: 'A',
-      rank: '5th in Class',
-      teacherRemarks: 'Good performance overall. Focus on improving diagram representation in Chemistry.',
-      subjects: [
-        { subject: 'Mathematics', maxMarks: 100, marksObtained: 90, grade: 'A+', status: 'Pass' },
-        { subject: 'Physics', maxMarks: 100, marksObtained: 85, grade: 'A', status: 'Pass' },
-        { subject: 'Chemistry', maxMarks: 100, marksObtained: 82, grade: 'A', status: 'Pass' },
-        { subject: 'English', maxMarks: 100, marksObtained: 92, grade: 'A+', status: 'Pass' },
-        { subject: 'Computer Science', maxMarks: 100, marksObtained: 94, grade: 'O', status: 'Pass' },
-        { subject: 'Social Studies', maxMarks: 100, marksObtained: 88, grade: 'A', status: 'Pass' },
-      ],
-    },
+  useEffect(() => {
+    fetchAcademicRealData();
+  }, [selectedStudent]);
+
+  const fetchAcademicRealData = async () => {
+    setLoading(true);
+    try {
+      if (selectedStudent && selectedStudent.id) {
+        const studentId = selectedStudent.id || (selectedStudent as any)._id;
+        const res = await api.get(`/api/exams/student/${studentId}`).catch(() => ({ data: [] }));
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          setResults(res.data);
+        } else {
+          setResults([]);
+        }
+      }
+    } catch (e) {
+      console.log('Error fetching academic data:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Enrolled subjects in Grade 10 from MongoDB
+  const standardSubjects = [
+    { subject: 'Mathematics', code: 'MAT101', teacher: 'Priya Sharma (M.Sc., B.Ed)' },
+    { subject: 'Science', code: 'SCI101', teacher: 'Ramesh Kumar (M.A., B.Ed)' },
+    { subject: 'English', code: 'ENG101', teacher: 'Senior Faculty' },
+    { subject: 'Tamil', code: 'TAM101', teacher: 'Ramesh Kumar (M.A., B.Ed)' },
+    { subject: 'Social Studies', code: 'SOC101', teacher: 'Department Faculty' },
   ];
 
-  const currentTerm = examTerms[selectedTermIndex];
-
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E293B" />
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={fetchAcademicRealData} colors={['#8B5CF6']} />}
+    >
+      {/* Student Academic Header Card */}
+      <View style={styles.summaryCard}>
+        <View style={styles.cardTop}>
+          <View>
+            <Text style={styles.childName}>{selectedStudent?.name || 'Student'}</Text>
+            <Text style={styles.childSub}>
+              {selectedStudent?.grade}-{selectedStudent?.section} • Roll No: {selectedStudent?.rollNo}
+            </Text>
+          </View>
+          <View style={styles.badgeTerm}>
+            <Text style={styles.badgeTermText}>Academic Year 2026-27</Text>
+          </View>
+        </View>
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Academic Performance</Text>
-        <Text style={styles.headerSubtitle}>
-          {selectedStudent ? `${selectedStudent.name} • ${selectedStudent.grade}-${selectedStudent.section}` : 'Report Card & Marks'}
-        </Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statVal}>CBSE / State</Text>
+            <Text style={styles.statLbl}>Curriculum</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statVal}>5</Text>
+            <Text style={styles.statLbl}>Subjects</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statVal}>Active</Text>
+            <Text style={styles.statLbl}>Enrolled</Text>
+          </View>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Term Selection Tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.termSelector}>
-          {examTerms.map((term, index) => (
-            <TouchableOpacity
-              key={term.id}
-              style={[styles.termChip, selectedTermIndex === index && styles.termChipActive]}
-              onPress={() => setSelectedTermIndex(index)}
-            >
-              <Text style={[styles.termChipText, selectedTermIndex === index && styles.termChipTextActive]}>
-                {term.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {/* Published Exam Results */}
+      <Text style={styles.sectionHeading}>Published Exam Results</Text>
 
-        {/* Overview Score Card */}
-        <View style={styles.scoreCard}>
-          <View style={styles.scoreTop}>
-            <View>
-              <Text style={styles.examTitle}>{currentTerm.title}</Text>
-              <Text style={styles.examDate}>{currentTerm.date}</Text>
+      {loading ? (
+        <ActivityIndicator size="small" color="#8B5CF6" style={{ marginVertical: 20 }} />
+      ) : results.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyIcon}>📝</Text>
+          <Text style={styles.emptyTitle}>Upcoming Term Exams Scheduled</Text>
+          <Text style={styles.emptyText}>
+            Quarterly and Mid-Term examination results will be published directly by teachers here after evaluation.
+          </Text>
+        </View>
+      ) : (
+        results.map((item, idx) => (
+          <View key={item._id || idx} style={styles.resultCard}>
+            <Text style={styles.examTitle}>{item.exam?.name || 'Term Exam'}</Text>
+            <Text style={styles.examMarks}>
+              Marks: {item.marksObtained} / {item.maxMarks}
+            </Text>
+            <Text style={styles.examGrade}>Grade: {item.grade}</Text>
+          </View>
+        ))
+      )}
+
+      {/* Enrolled Subjects List */}
+      <Text style={styles.sectionHeading}>Enrolled Subjects & Teachers</Text>
+      <View style={styles.subjectsContainer}>
+        {standardSubjects.map((sub, i) => (
+          <View key={i} style={styles.subjectRow}>
+            <View style={styles.subIconBox}>
+              <Text style={styles.subEmoji}>📚</Text>
             </View>
-            <View style={styles.gradeBadge}>
-              <Text style={styles.gradeBadgeText}>{currentTerm.grade}</Text>
+            <View style={styles.subInfo}>
+              <Text style={styles.subTitle}>{sub.subject}</Text>
+              <Text style={styles.subTeacher}>Faculty: {sub.teacher}</Text>
+            </View>
+            <View style={styles.codePill}>
+              <Text style={styles.codeText}>{sub.code}</Text>
             </View>
           </View>
-
-          <View style={styles.metricsRow}>
-            <View style={styles.metricItem}>
-              <Text style={styles.metricValue}>{currentTerm.overallPercentage}%</Text>
-              <Text style={styles.metricLabel}>Percentage</Text>
-            </View>
-            <View style={styles.metricDivider} />
-            <View style={styles.metricItem}>
-              <Text style={[styles.metricValue, { color: '#3B82F6' }]}>{currentTerm.rank}</Text>
-              <Text style={styles.metricLabel}>Class Rank</Text>
-            </View>
-            <View style={styles.metricDivider} />
-            <View style={styles.metricItem}>
-              <Text style={[styles.metricValue, { color: '#10B981' }]}>PASS</Text>
-              <Text style={styles.metricLabel}>Result</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Teacher Remarks Box */}
-        <View style={styles.remarksBox}>
-          <Text style={styles.remarksTitle}>💬 Class Teacher Remarks</Text>
-          <Text style={styles.remarksText}>"{currentTerm.teacherRemarks}"</Text>
-        </View>
-
-        {/* Subject Breakdown Table */}
-        <View style={styles.tableHeader}>
-          <Text style={styles.tableTitle}>Subject Breakdown</Text>
-          <TouchableOpacity
-            onPress={() => Alert.alert('Report Card PDF', 'Downloading full report card PDF to mobile...')}
-          >
-            <Text style={styles.downloadLink}>📥 Download PDF</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.tableContainer}>
-          <View style={styles.tableHeadRow}>
-            <Text style={[styles.headCell, { flex: 2 }]}>Subject</Text>
-            <Text style={[styles.headCell, { flex: 1, textAlign: 'center' }]}>Marks</Text>
-            <Text style={[styles.headCell, { flex: 1, textAlign: 'center' }]}>Grade</Text>
-            <Text style={[styles.headCell, { flex: 1, textAlign: 'right' }]}>Result</Text>
-          </View>
-
-          {currentTerm.subjects.map((sub, idx) => (
-            <View
-              key={idx}
-              style={[
-                styles.tableBodyRow,
-                idx === currentTerm.subjects.length - 1 && { borderBottomWidth: 0 },
-              ]}
-            >
-              <Text style={[styles.bodyCellSubject, { flex: 2 }]}>{sub.subject}</Text>
-              <Text style={[styles.bodyCellMarks, { flex: 1, textAlign: 'center' }]}>
-                {sub.marksObtained} / {sub.maxMarks}
-              </Text>
-              <View style={{ flex: 1, alignItems: 'center' }}>
-                <View style={styles.miniGradeBadge}>
-                  <Text style={styles.miniGradeText}>{sub.grade}</Text>
-                </View>
-              </View>
-              <Text style={[styles.bodyCellPass, { flex: 1, textAlign: 'right' }]}>{sub.status}</Text>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        ))}
+      </View>
+    </ScrollView>
   );
 };
 
@@ -186,211 +144,174 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  header: {
-    backgroundColor: '#1E293B',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-  },
-  headerTitle: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
-    color: '#94A3B8',
-    fontSize: 14,
-    marginTop: 4,
-  },
   scrollContent: {
     padding: 16,
     paddingBottom: 40,
   },
-  termSelector: {
-    marginBottom: 16,
-  },
-  termChip: {
-    backgroundColor: '#E2E8F0',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  termChipActive: {
-    backgroundColor: '#2563EB',
-  },
-  termChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  termChipTextActive: {
-    color: '#FFFFFF',
-  },
-  scoreCard: {
+  summaryCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
   },
-  scoreTop: {
+  cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  examTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E293B',
-    maxWidth: '80%',
+  childName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
   },
-  examDate: {
-    fontSize: 13,
+  childSub: {
+    fontSize: 12,
     color: '#64748B',
     marginTop: 2,
+    fontWeight: '600',
   },
-  gradeBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 2,
-    borderColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
+  badgeTerm: {
+    backgroundColor: '#F3E8FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
   },
-  gradeBadgeText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#2563EB',
+  badgeTermText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#7E22CE',
   },
-  metricsRow: {
+  statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 14,
+    justifyContent: 'space-around',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 14,
   },
-  metricItem: {
-    flex: 1,
+  statBox: {
     alignItems: 'center',
   },
-  metricValue: {
-    fontSize: 18,
+  statVal: {
+    fontSize: 15,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#0F172A',
   },
-  metricLabel: {
+  statLbl: {
     fontSize: 11,
     color: '#64748B',
     marginTop: 2,
   },
-  metricDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#CBD5E1',
+  sectionHeading: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 12,
   },
-  remarksBox: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B',
-  },
-  remarksTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#92400E',
-    marginBottom: 4,
-  },
-  remarksText: {
-    fontSize: 13,
-    color: '#78350F',
-    lineHeight: 18,
-    fontStyle: 'italic',
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  tableTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  downloadLink: {
-    fontSize: 13,
-    color: '#2563EB',
-    fontWeight: '600',
-  },
-  tableContainer: {
+  emptyCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  tableHeadRow: {
-    flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-  },
-  headCell: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#475569',
-    textTransform: 'uppercase',
-  },
-  tableBodyRow: {
-    flexDirection: 'row',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderRadius: 16,
+    padding: 24,
     alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  bodyCellSubject: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
+  emptyIcon: {
+    fontSize: 32,
+    marginBottom: 8,
   },
-  bodyCellMarks: {
+  emptyTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: '#334155',
   },
-  miniGradeBadge: {
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-  },
-  miniGradeText: {
+  emptyText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#166534',
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 4,
   },
-  bodyCellPass: {
+  resultCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  examTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  examMarks: {
     fontSize: 13,
+    color: '#2563EB',
     fontWeight: '700',
-    color: '#10B981',
+    marginTop: 4,
+  },
+  examGrade: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  subjectsContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  subjectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
+  },
+  subIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  subEmoji: {
+    fontSize: 18,
+  },
+  subInfo: {
+    flex: 1,
+  },
+  subTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  subTeacher: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  codePill: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  codeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
   },
 });

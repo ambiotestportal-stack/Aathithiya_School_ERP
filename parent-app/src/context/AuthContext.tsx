@@ -74,28 +74,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const fetchParentChildren = async (parentId: string) => {
+  const fetchParentChildren = async (_parentId?: string) => {
     try {
-      const res = await api.get(`/api/students/parent/${parentId}`);
+      const res = await api.get('/api/students/children');
       if (res.data && Array.isArray(res.data) && res.data.length > 0) {
         const mappedList: StudentChild[] = res.data.map((item: any) => ({
           id: item._id || item.id,
-          name: item.name || 'Karthik Murugan',
+          _id: item._id || item.id,
+          name: item.user?.name || item.name || 'Karthik Murugan',
           admissionNo: item.admissionNumber || 'ADM-1001',
           rollNo: item.rollNumber || '1001',
           grade: item.enrolledClass?.name || 'Grade 10',
           section: item.enrolledClass?.section || 'A',
-          bloodGroup: item.bloodGroup || 'O+ Positive',
-          busRoute: 'Route 14: Anna Nagar Express',
+          bloodGroup: item.bloodGroup || 'O+',
+          dob: item.dob ? new Date(item.dob).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '14 May 2010',
+          busRoute: item.transportMode === 'Bus' ? 'Route 14: Anna Nagar Express' : 'Self / Walk',
         }));
         setStudentList(mappedList);
-        if (!selectedStudent) {
-          setSelectedStudent(mappedList[0]);
-          await AsyncStorage.setItem('parent_selected_child', JSON.stringify(mappedList[0]));
-        }
+        setSelectedStudent(mappedList[0]);
+        await AsyncStorage.setItem('parent_selected_child', JSON.stringify(mappedList[0]));
       }
     } catch (error) {
-      console.log('Using default child profile context');
+      console.log('Using default child profile context:', error);
     }
   };
 
