@@ -81,18 +81,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const mappedList: StudentChild[] = res.data.map((item: any) => ({
           id: item._id || item.id,
           _id: item._id || item.id,
-          name: item.user?.name || item.name || 'Karthik Murugan',
+          name: item.user?.name || item.name || 'Student',
           admissionNo: item.admissionNumber || 'ADM-1001',
           rollNo: item.rollNumber || '1001',
           grade: item.enrolledClass?.name || 'Grade 10',
           section: item.enrolledClass?.section || 'A',
           bloodGroup: item.bloodGroup || 'O+',
           dob: item.dob ? new Date(item.dob).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '14 May 2010',
-          busRoute: item.transportMode === 'Bus' ? 'Route 14: Anna Nagar Express' : 'Self / Walk',
+          busRoute: item.transportMode === 'Bus' ? 'Route 14: Anna Nagar Express' : 'Self / Walking',
         }));
         setStudentList(mappedList);
-        setSelectedStudent(mappedList[0]);
-        await AsyncStorage.setItem('parent_selected_child', JSON.stringify(mappedList[0]));
+        setSelectedStudent((current) => {
+          if (current && mappedList.some((c) => c.id === current.id)) {
+            return current;
+          }
+          AsyncStorage.setItem('parent_selected_child', JSON.stringify(mappedList[0]));
+          return mappedList[0];
+        });
       }
     } catch (error) {
       console.log('Using default child profile context:', error);

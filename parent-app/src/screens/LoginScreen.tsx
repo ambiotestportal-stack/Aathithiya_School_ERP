@@ -57,7 +57,7 @@ export const LoginScreen = () => {
             <Text style={styles.cardSub}>Sign in to view student attendance, fees & academic reports</Text>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Parent Username / Roll No</Text>
+              <Text style={styles.label}>Parent Username</Text>
               <TextInput
                 style={styles.input}
                 value={username}
