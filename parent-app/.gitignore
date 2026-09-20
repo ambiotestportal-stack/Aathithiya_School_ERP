@@ -1,0 +1,19 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+
+# Android
+android/.gradle/
+android/app/build/
+android/build/
+android/temp_aar/
+android/local.properties
+android/repo/
+*.keystore
+!debug.keystore
+
+# Metro / React Native
+.metro-health-check*

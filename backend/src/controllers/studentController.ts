@@ -1,6 +1,26 @@
 import { Request, Response } from 'express';
 import StudentProfileModel from '../models/StudentProfile';
 import UserModel, { UserRole } from '../models/User';
+import TransportModel from '../models/Transport';
+
+const syncStudentBusAllocation = async (studentId: any, newBusNumber?: string, oldBusNumber?: string, transportMode?: string) => {
+  try {
+    if (oldBusNumber && (oldBusNumber !== newBusNumber || transportMode !== 'School Bus')) {
+      const oldQuery: any[] = [{ busNumber: oldBusNumber }, { vehicleNumber: oldBusNumber }];
+      if (oldBusNumber.match(/^[0-9a-fA-F]{24}$/)) oldQuery.push({ _id: oldBusNumber });
+      await TransportModel.updateMany({ $or: oldQuery }, { $pull: { students: studentId } });
+    }
+
+    if (transportMode === 'School Bus' && newBusNumber) {
+      const newQuery: any[] = [{ busNumber: newBusNumber }, { vehicleNumber: newBusNumber }];
+      if (newBusNumber.match(/^[0-9a-fA-F]{24}$/)) newQuery.push({ _id: newBusNumber });
+      await TransportModel.findOneAndUpdate({ $or: newQuery }, { $addToSet: { students: studentId } });
+    }
+  } catch (err) {
+    console.error('Failed to sync student bus allocation:', err);
+  }
+};
+
 
 export const getMyProfile = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -189,6 +209,7 @@ export const createStudent = async (req: Request, res: Response): Promise<void> 
 
     try {
       await newProfile.save();
+      await syncStudentBusAllocation(newProfile._id, newProfile.busNumber, undefined, newProfile.transportMode);
     } catch (profileError) {
       // Rollback user creation
       await UserModel.findByIdAndDelete(newUser._id);
@@ -253,6 +274,8 @@ export const updateStudent = async (req: Request, res: Response): Promise<void> 
       if (email) userUpdate.email = email.trim();
       await UserModel.findByIdAndUpdate(profile.user, userUpdate);
     }
+
+    const oldBusNumber = profile.busNumber;
     
     await StudentProfileModel.findByIdAndUpdate(req.params.id, {
       admissionNumber: admissionNumber ? admissionNumber.trim() : profile.admissionNumber,
@@ -273,7 +296,12 @@ export const updateStudent = async (req: Request, res: Response): Promise<void> 
       busNumber: busNumber !== undefined ? busNumber : profile.busNumber
     });
 
+    const finalMode = transportMode || profile.transportMode;
+    const finalBus = busNumber !== undefined ? busNumber : profile.busNumber;
+    await syncStudentBusAllocation(profile._id, finalBus, oldBusNumber, finalMode);
+
     const updatedProfile = await StudentProfileModel.findById(req.params.id)
+
       .populate('user', 'name username email')
       .populate({
         path: 'enrolledClass',

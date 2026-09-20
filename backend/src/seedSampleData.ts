@@ -1,4 +1,8 @@
 import dotenv from 'dotenv';
+import dns from 'dns';
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {}
 import mongoose from 'mongoose';
 import User, { UserRole } from './models/User';
 import StaffProfile from './models/StaffProfile';
@@ -13,7 +17,7 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/school_erp
 
 async function seedData() {
   try {
-    await mongoose.connect(MONGO_URI);
+    await mongoose.connect(MONGO_URI, { tlsAllowInvalidCertificates: true });
     console.log('Connected to MongoDB for seeding...');
 
     // 0. Seed Super Admin

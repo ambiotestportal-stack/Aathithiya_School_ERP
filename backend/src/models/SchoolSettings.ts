@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ISchoolSettings extends Document {
   schoolName?: string;
+  logoUrl?: string;
   estYear?: string;
   principalName?: string;
   affiliationNo?: string;
@@ -17,6 +18,7 @@ export interface ISchoolSettings extends Document {
 
 const SchoolSettingsSchema: Schema = new Schema({
   schoolName: { type: String, default: 'EduERP International Academy' },
+  logoUrl: { type: String, default: '' },
   estYear: { type: String, default: '2005' },
   principalName: { type: String, default: 'Dr. Robert Oppenheimer' },
   affiliationNo: { type: String, default: 'CBSE/AFF/123456' },

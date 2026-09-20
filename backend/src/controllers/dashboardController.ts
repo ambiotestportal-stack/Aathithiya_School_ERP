@@ -7,6 +7,7 @@ import StaffProfileModel from '../models/StaffProfile';
 import CalendarEventModel from '../models/CalendarEvent';
 import NoticeModel from '../models/Notice';
 import TransportModel from '../models/Transport';
+import ClassModel from '../models/Class';
 
 export const getAdminStats = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -21,6 +22,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       totalStudents,
       totalTeachers,
       totalParents,
+      totalClasses,
       allFees,
       feeRecordsThisYear,
       attendances,
@@ -34,6 +36,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       StudentProfileModel.countDocuments({ isDeleted: { $ne: true } }),
       StaffProfileModel.countDocuments({ isDeleted: { $ne: true } }),
       UserModel.countDocuments({ role: UserRole.PARENT, isDeleted: { $ne: true } }),
+      ClassModel.countDocuments(),
       FeeRecordModel.find().lean(),
       FeeRecordModel.find({
         dueDate: {
@@ -104,6 +107,11 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       }
     });
 
+    const totalTodayAttendanceRecords = present + absent + onLeave;
+    const overallAttendance = totalTodayAttendanceRecords > 0
+      ? ((present / totalTodayAttendanceRecords) * 100).toFixed(1)
+      : '0.0';
+
     const attendanceDonut = [
       { label: 'Present Students', value: present, color: '#10b981' },
       { label: 'Absent Students', value: absent, color: '#ef4444' },
@@ -115,7 +123,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       const foundKey = Object.keys(classAttendanceMap).find(k => k.toLowerCase().includes(g.toLowerCase()));
       const percentage = (foundKey && classAttendanceMap[foundKey].total > 0)
         ? Math.round((classAttendanceMap[foundKey].present / classAttendanceMap[foundKey].total) * 100)
-        : (totalStudents > 0 ? 92 : 0);
+        : 0; // STRICTLY 0 IF NO DB RECORDS FOR THAT CLASS TODAY!
       return { grade: g, percentage };
     });
 
@@ -194,7 +202,6 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       }
     });
 
-    // Display clean aggregated grade groups for Admissions Bar Chart
     const keyGrades = ['Grade 1-3', 'Grade 4-5', 'Grade 6-8', 'Grade 9-10', 'Grade 11-12'];
     const newAdmissionsChart = keyGrades.map(g => {
       let count = 0;
@@ -205,7 +212,7 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
         else if (g === 'Grade 9-10' && (k.includes('9') || k.includes('10'))) count += newAdmissionsMap[k];
         else if (g === 'Grade 11-12' && (k.includes('11') || k.includes('12'))) count += newAdmissionsMap[k];
       });
-      return { label: g, value: count || (totalStudents > 0 ? 1 : 0), secondaryValue: 0, color: 'bg-emerald-500' };
+      return { label: g, value: count, secondaryValue: 0, color: 'bg-emerald-500' };
     });
 
     const colorsPalette = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#3b82f6', '#06b6d4', '#84cc16'];
@@ -359,7 +366,9 @@ export const getAdminStats = async (req: Request, res: Response): Promise<void> 
       topEmployees,
       upcomingEvents,
       noticeBoard,
-      // Academic Tab
+      // Academic Tab (Strict Real DB Values Only!)
+      overallAttendance,
+      totalClasses,
       classAttendance,
       totalNewAdmissions,
       newAdmissionsChart,

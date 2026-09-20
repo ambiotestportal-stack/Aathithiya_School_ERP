@@ -6,8 +6,10 @@ import { motion } from 'framer-motion';
 import { CustomBarChart, CustomDonutChart } from '@/components/molecules/Charts';
 import { 
   Users, Briefcase, GraduationCap, DollarSign, CalendarCheck, 
-  Cake, Award, Bell, Calendar, Bus, BookOpen, UserCheck, Phone, Inbox, UserPlus, PieChart, RefreshCw, Sparkles, Navigation, Route, ShieldCheck
+  Cake, Award, Bell, Calendar, Bus, BookOpen, UserCheck, Phone, Inbox, UserPlus, PieChart, RefreshCw, Sparkles, Navigation, Route, ShieldCheck, TrendingUp, ArrowUpRight,
+  History, Sun, Moon, Clock
 } from 'lucide-react';
+
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'employees' | 'fees' | 'academic' | 'transport'>('overview');
@@ -17,7 +19,9 @@ export default function AdminDashboard() {
     totalStudents: 0,
     totalTeachers: 0,
     totalParents: 0,
+    totalClasses: 0,
     revenue: 0,
+    overallAttendance: '0.0',
     revenueData: [],
     attendanceDonut: [],
     birthdays: [],
@@ -38,12 +42,17 @@ export default function AdminDashboard() {
     feeCategoryBreakdown: [],
     recentFeeReceipts: []
   });
+  const [transportLogs, setTransportLogs] = useState<any[]>([]);
 
   const fetchDashboardStats = () => {
     setLoading(true);
-    api.get('/api/dashboard/admin')
-      .then(res => {
-        setStats(res.data);
+    Promise.all([
+      api.get('/api/dashboard/admin'),
+      api.get('/api/transport/logs').catch(() => ({ data: [] }))
+    ])
+      .then(([statsRes, logsRes]) => {
+        setStats(statsRes.data);
+        setTransportLogs(logsRes.data || []);
         setError(null);
       })
       .catch((err) => {
@@ -52,6 +61,7 @@ export default function AdminDashboard() {
       })
       .finally(() => setLoading(false));
   };
+
 
   useEffect(() => {
     fetchDashboardStats();
@@ -83,7 +93,7 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
             Super Admin ERP Dashboard
             <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-indigo-500" /> Live Analytics
+              <Sparkles className="w-3 h-3 text-indigo-500" /> Live Real Database
             </span>
           </h1>
           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">
@@ -154,48 +164,124 @@ export default function AdminDashboard() {
       {/* TAB 1: OVERVIEW */}
       {activeTab === 'overview' && (
         <div className="space-y-8">
-          {/* Vibrant KPI Cards */}
+          {/* Executive Soft UI KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div custom={0} initial="hidden" animate="visible" variants={cardVariants} className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-200/80 dark:border-indigo-800/60 shadow-xl shadow-indigo-500/5 backdrop-blur-md flex items-center justify-between">
-              <div>
-                <h3 className="text-indigo-600 dark:text-indigo-400 text-xs font-extrabold uppercase tracking-wider">Total Students</h3>
-                <p className="text-3xl font-black mt-2 text-slate-900 dark:text-white">{(stats.totalStudents || 0).toLocaleString()}</p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">Enrolled Students</span>
+            {/* Card 1: Total Students */}
+            <motion.div
+              custom={0}
+              initial="hidden"
+              animate="visible"
+              variants={cardVariants}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/40 p-6 shadow-xl shadow-indigo-500/5 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 flex items-center justify-between"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-indigo-600" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 text-xs font-extrabold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                  <span>Total Students</span>
+                </div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {(stats.totalStudents || 0).toLocaleString()}
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/60">
+                    <TrendingUp className="w-3 h-3 text-indigo-500" /> Live DB
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-400">Enrolled</span>
+                </div>
               </div>
-              <div className="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
                 <GraduationCap className="w-7 h-7" />
               </div>
             </motion.div>
 
-            <motion.div custom={1} initial="hidden" animate="visible" variants={cardVariants} className="p-6 rounded-3xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-200/80 dark:border-purple-800/60 shadow-xl shadow-purple-500/5 backdrop-blur-md flex items-center justify-between">
-              <div>
-                <h3 className="text-purple-600 dark:text-purple-400 text-xs font-extrabold uppercase tracking-wider">Total Teachers</h3>
-                <p className="text-3xl font-black mt-2 text-slate-900 dark:text-white">{(stats.totalTeachers || 0).toLocaleString()}</p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">Academic Faculty</span>
+            {/* Card 2: Total Teachers */}
+            <motion.div
+              custom={1}
+              initial="hidden"
+              animate="visible"
+              variants={cardVariants}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-purple-100 dark:border-purple-900/40 p-6 shadow-xl shadow-purple-500/5 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 flex items-center justify-between"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-purple-600" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400 text-xs font-extrabold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                  <span>Total Teachers</span>
+                </div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {(stats.totalTeachers || 0).toLocaleString()}
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/80 text-purple-600 dark:text-purple-300 border border-purple-100 dark:border-purple-800/60">
+                    <Award className="w-3 h-3 text-purple-500" /> Active Staff
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-400">Faculty</span>
+                </div>
               </div>
-              <div className="w-14 h-14 bg-purple-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
                 <Briefcase className="w-7 h-7" />
               </div>
             </motion.div>
 
-            <motion.div custom={2} initial="hidden" animate="visible" variants={cardVariants} className="p-6 rounded-3xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-200/80 dark:border-blue-800/60 shadow-xl shadow-blue-500/5 backdrop-blur-md flex items-center justify-between">
-              <div>
-                <h3 className="text-blue-600 dark:text-blue-400 text-xs font-extrabold uppercase tracking-wider">Total Parents</h3>
-                <p className="text-3xl font-black mt-2 text-slate-900 dark:text-white">{(stats.totalParents || 0).toLocaleString()}</p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">Registered Guardians</span>
+            {/* Card 3: Total Parents */}
+            <motion.div
+              custom={2}
+              initial="hidden"
+              animate="visible"
+              variants={cardVariants}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/40 p-6 shadow-xl shadow-blue-500/5 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 flex items-center justify-between"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-blue-600" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 text-xs font-extrabold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  <span>Total Parents</span>
+                </div>
+                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {(stats.totalParents || 0).toLocaleString()}
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-800/60">
+                    <UserCheck className="w-3 h-3 text-blue-500" /> Verified
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-400">Guardians</span>
+                </div>
               </div>
-              <div className="w-14 h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
                 <Users className="w-7 h-7" />
               </div>
             </motion.div>
 
-            <motion.div custom={3} initial="hidden" animate="visible" variants={cardVariants} className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-200/80 dark:border-emerald-800/60 shadow-xl shadow-emerald-500/5 backdrop-blur-md flex items-center justify-between">
-              <div>
-                <h3 className="text-emerald-600 dark:text-emerald-400 text-xs font-extrabold uppercase tracking-wider">Total Revenue</h3>
-                <p className="text-3xl font-black mt-2 text-emerald-600 dark:text-emerald-400">₹{(stats.revenue || 0).toLocaleString()}</p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300">Realized Payments</span>
+            {/* Card 4: Total Revenue */}
+            <motion.div
+              custom={3}
+              initial="hidden"
+              animate="visible"
+              variants={cardVariants}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900/40 p-6 shadow-xl shadow-emerald-500/5 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 flex items-center justify-between"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-emerald-600" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span>Total Revenue</span>
+                </div>
+                <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                  ₹{(stats.revenue || 0).toLocaleString()}
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/60">
+                    <ArrowUpRight className="w-3 h-3 text-emerald-500" /> Live Realized
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-400">Payments</span>
+                </div>
               </div>
-              <div className="w-14 h-14 bg-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
                 <DollarSign className="w-7 h-7" />
               </div>
             </motion.div>
@@ -222,51 +308,55 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* TAB 2: ACADEMIC (Vibrant Soft UI Cards) */}
+      {/* TAB 2: ACADEMIC (STRICT REAL DATABASE DATA ONLY - NO MOCK VALUES) */}
       {activeTab === 'academic' && (
         <div className="space-y-8">
-          {/* Header & Colorful KPI Summary */}
+          {/* Header & Executive Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-200/80 dark:border-emerald-800/60 shadow-xl shadow-emerald-500/5 flex items-center justify-between">
+            <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900/40 p-6 shadow-xl flex items-center justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Overall Attendance</p>
-                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">94.2%</p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300">High Daily Attendance</span>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{stats.overallAttendance || '0.0'}%</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">Today's Live Average</span>
               </div>
-              <div className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-emerald-500/30 shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/30 shrink-0">
                 <UserCheck className="w-6 h-6" />
               </div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-200/80 dark:border-indigo-800/60 shadow-xl shadow-indigo-500/5 flex items-center justify-between">
+            <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/40 p-6 shadow-xl flex items-center justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500" />
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Academic Classes</p>
-                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">12 Classes</p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">Grade 1 to Grade 12</span>
+                <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{stats.totalClasses || 0} Classes</p>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Registered Classes</span>
               </div>
-              <div className="w-12 h-12 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-indigo-500/30 shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/30 shrink-0">
                 <BookOpen className="w-6 h-6" />
               </div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-200/80 dark:border-purple-800/60 shadow-xl shadow-purple-500/5 flex items-center justify-between">
+            <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-purple-100 dark:border-purple-900/40 p-6 shadow-xl flex items-center justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500" />
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">Total Enrolled</p>
                 <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{(stats.totalStudents || 0).toLocaleString()}</p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">Active Students</span>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">Active Students</span>
               </div>
-              <div className="w-12 h-12 bg-purple-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-purple-500/30 shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-500/30 shrink-0">
                 <GraduationCap className="w-6 h-6" />
               </div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-200/80 dark:border-blue-800/60 shadow-xl shadow-blue-500/5 flex items-center justify-between">
+            <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/40 p-6 shadow-xl flex items-center justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">New Admissions</p>
                 <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{stats.totalNewAdmissions || 0}</p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">Current Batch</span>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Current Batch</span>
               </div>
-              <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-md shadow-blue-500/30 shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/30 shrink-0">
                 <UserPlus className="w-6 h-6" />
               </div>
             </div>
@@ -283,30 +373,28 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Class Attendance Breakdown</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Attendance percentages by grade level</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Today's live attendance percentages by class</p>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {(stats.classAttendance && stats.classAttendance.length > 0 ? stats.classAttendance : [
-                    { grade: 'Grade 10', percentage: 96 },
-                    { grade: 'Grade 9', percentage: 94 },
-                    { grade: 'Grade 8', percentage: 95 },
-                    { grade: 'Grade 7', percentage: 91 },
-                    { grade: 'Grade 6', percentage: 93 },
-                    { grade: 'Grade 5', percentage: 92 },
-                    { grade: 'Grade 4', percentage: 90 },
-                    { grade: 'Grade 3', percentage: 94 }
-                  ]).map((item: any, idx: number) => (
-                    <div key={idx} className="flex items-center gap-4 text-xs font-bold text-slate-700 dark:text-slate-300">
-                      <span className="w-20 text-slate-600 dark:text-slate-400 shrink-0 font-semibold">{item.grade}</span>
-                      <div className="flex-1 h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                        <div className="h-full bg-emerald-500 transition-all duration-500 rounded-full" style={{ width: `${item.percentage || 90}%` }} />
+                {(!stats.classAttendance || stats.classAttendance.length === 0) ? (
+                  <div className="py-12 text-center text-slate-400 dark:text-slate-500">
+                    <UserCheck className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs font-semibold">No attendance recorded today</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {stats.classAttendance.map((item: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-4 text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <span className="w-20 text-slate-600 dark:text-slate-400 shrink-0 font-semibold">{item.grade}</span>
+                        <div className="flex-1 h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                          <div className="h-full bg-emerald-500 transition-all duration-500 rounded-full" style={{ width: `${item.percentage || 0}%` }} />
+                        </div>
+                        <span className="w-10 text-right text-emerald-600 dark:text-emerald-400 font-extrabold">{item.percentage || 0}%</span>
                       </div>
-                      <span className="w-10 text-right text-emerald-600 dark:text-emerald-400 font-extrabold">{item.percentage || 90}%</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -326,13 +414,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <CustomBarChart
-                  data={stats.newAdmissionsChart && stats.newAdmissionsChart.length > 0 ? stats.newAdmissionsChart : [
-                    { label: 'Grade 1-3', value: 45, secondaryValue: 0, color: 'bg-emerald-500' },
-                    { label: 'Grade 4-5', value: 38, secondaryValue: 0, color: 'bg-emerald-500' },
-                    { label: 'Grade 6-8', value: 52, secondaryValue: 0, color: 'bg-emerald-500' },
-                    { label: 'Grade 9-10', value: 64, secondaryValue: 0, color: 'bg-emerald-500' },
-                    { label: 'Grade 11-12', value: 48, secondaryValue: 0, color: 'bg-emerald-500' }
-                  ]}
+                  data={stats.newAdmissionsChart || []}
                   title=""
                   subtitle=""
                 />
@@ -342,59 +424,63 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* TAB 3: TRANSPORT (Vibrant Soft UI Cards - Fix Screenshot media_1789375723733.png) */}
+      {/* TAB 3: TRANSPORT */}
       {activeTab === 'transport' && (
         <div className="space-y-8">
-          {/* Vibrant KPI Cards with Icon Badges & Color Gradients */}
+          {/* Executive Colorful Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-200/80 dark:border-indigo-800/60 shadow-xl shadow-indigo-500/5 backdrop-blur-md flex items-center justify-between">
+            <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/40 p-6 shadow-xl flex items-center justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500" />
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Total Fleet Vehicles</p>
                 <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
                   {stats.transportRoutes && stats.transportRoutes.length > 0 ? `${stats.transportRoutes.length} Buses` : '0 Buses'}
                 </p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">Operational Fleet</span>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Operational Fleet</span>
               </div>
-              <div className="w-13 h-13 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+              <div className="w-13 h-13 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
                 <Bus className="w-6 h-6" />
               </div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-200/80 dark:border-purple-800/60 shadow-xl shadow-purple-500/5 backdrop-blur-md flex items-center justify-between">
+            <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-purple-100 dark:border-purple-900/40 p-6 shadow-xl flex items-center justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500" />
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">Active Routes</p>
                 <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
                   {stats.transportRoutes && stats.transportRoutes.length > 0 ? `${stats.transportRoutes.length} Routes` : '0 Routes'}
                 </p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">City Wide Coverage</span>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">City Wide Coverage</span>
               </div>
-              <div className="w-13 h-13 bg-purple-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
+              <div className="w-13 h-13 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
                 <Route className="w-6 h-6" />
               </div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-200/80 dark:border-blue-800/60 shadow-xl shadow-blue-500/5 backdrop-blur-md flex items-center justify-between">
+            <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/40 p-6 shadow-xl flex items-center justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">Commuter Students</p>
                 <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
                   {(stats.transportRoutes || []).reduce((acc: number, curr: any) => acc + (curr.studentCount || 0), 0)} Students
                 </p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">Daily Bus Users</span>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Daily Bus Users</span>
               </div>
-              <div className="w-13 h-13 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
+              <div className="w-13 h-13 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
                 <Users className="w-6 h-6" />
               </div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-200/80 dark:border-emerald-800/60 shadow-xl shadow-emerald-500/5 backdrop-blur-md flex items-center justify-between">
+            <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900/40 p-6 shadow-xl flex items-center justify-between">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Driver & Support Staff</p>
                 <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">
                   {stats.transportRoutes && stats.transportRoutes.length > 0 ? `${stats.transportRoutes.length} Drivers` : '0 Staff'}
                 </p>
-                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300">Licensed Drivers</span>
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">Licensed Drivers</span>
               </div>
-              <div className="w-13 h-13 bg-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
+              <div className="w-13 h-13 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
                 <ShieldCheck className="w-6 h-6" />
               </div>
             </div>
@@ -448,46 +534,73 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Transport Fleet & Routes Table */}
+          {/* Daily Transport Activity & History Logs Table */}
           <div className="soft-card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
-                <Bus className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Transport Fleet & Driver Allocation</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Route details, assigned drivers, and bus capacity metrics</p>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Daily Transport Activity & History Logs</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Real-time history of morning bus arrivals and evening departures</p>
+                </div>
               </div>
             </div>
 
-            {(!stats.transportRoutes || stats.transportRoutes.length === 0) ? (
+            {(!transportLogs || transportLogs.length === 0) ? (
               <div className="py-12 text-center text-slate-400 dark:text-slate-500">
-                <Bus className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                <p className="text-xs font-semibold">No transport routes or vehicles registered in database</p>
+                <History className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                <p className="text-xs font-semibold">No transport history logs recorded yet</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-700/60 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
-                      <th className="py-3 px-4">Bus No</th>
-                      <th className="py-3 px-4">Vehicle Reg No</th>
-                      <th className="py-3 px-4">Driver Name</th>
-                      <th className="py-3 px-4">Contact</th>
+                      <th className="py-3 px-4">Date & Time</th>
+                      <th className="py-3 px-4">Bus / Vehicle</th>
                       <th className="py-3 px-4">Route Details</th>
-                      <th className="py-3 px-4 text-right">Occupancy / Capacity</th>
+                      <th className="py-3 px-4">Event Status</th>
+                      <th className="py-3 px-4">Triggered By</th>
+                      <th className="py-3 px-4 text-right">Parents Notified</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    {stats.transportRoutes.map((tr: any, idx: number) => (
+                    {transportLogs.slice(0, 10).map((log: any, idx: number) => (
                       <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
-                        <td className="py-3.5 px-4 font-black text-indigo-600 dark:text-indigo-400">{tr.busNumber}</td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white">{tr.vehicleNumber}</td>
-                        <td className="py-3.5 px-4 font-bold">{tr.driverName}</td>
-                        <td className="py-3.5 px-4 text-slate-500 flex items-center gap-1.5"><Phone className="w-3 h-3 text-emerald-500" /> {tr.driverContact}</td>
-                        <td className="py-3.5 px-4">{tr.route}</td>
-                        <td className="py-3.5 px-4 text-right font-bold text-indigo-600 dark:text-indigo-400">
-                          {tr.studentCount} / {tr.capacity}
+
+                        <td className="py-3.5 px-4 font-mono text-xs whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{new Date(log.timestamp).toLocaleDateString()} {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                          {log.busNumber && (
+                            <span className="bg-amber-100 text-amber-800 font-bold text-xs px-2 py-0.5 rounded-md mr-1.5">
+                              Bus {log.busNumber}
+                            </span>
+                          )}
+                          <span className="font-mono text-xs text-slate-600 dark:text-slate-400">{log.vehicleNumber}</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">{log.route}</td>
+                        <td className="py-3.5 px-4">
+                          {log.eventType === 'REACHED_SCHOOL' ? (
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                              <Sun className="w-3.5 h-3.5 text-emerald-600" /> Reached School (Morning)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                              <Moon className="w-3.5 h-3.5 text-amber-600" /> Departed School (Evening)
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 font-medium text-slate-600 dark:text-slate-400">
+                          {log.triggeredBy?.name || 'Admin'}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-black text-indigo-600 dark:text-indigo-400">
+                          {log.studentsNotifiedCount || 0}
                         </td>
                       </tr>
                     ))}
@@ -496,6 +609,7 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+
         </div>
       )}
 

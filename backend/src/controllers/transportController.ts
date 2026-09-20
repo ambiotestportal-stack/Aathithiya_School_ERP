@@ -124,3 +124,91 @@ export const removeStudent = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+import TransportLogModel from '../models/TransportLog';
+import NoticeModel from '../models/Notice';
+
+export const notifyBusStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { eventType, notes } = req.body; // 'REACHED_SCHOOL' | 'STARTED_FROM_SCHOOL'
+
+    if (!['REACHED_SCHOOL', 'STARTED_FROM_SCHOOL'].includes(eventType)) {
+      res.status(400).json({ message: 'Invalid event type. Must be REACHED_SCHOOL or STARTED_FROM_SCHOOL' });
+      return;
+    }
+
+    const vehicle = await TransportModel.findById(id);
+    if (!vehicle) {
+      res.status(404).json({ message: 'Vehicle not found' });
+      return;
+    }
+
+    const busLabel = vehicle.busNumber ? `Bus No. ${vehicle.busNumber} (${vehicle.vehicleNumber})` : `Vehicle ${vehicle.vehicleNumber}`;
+    const studentsNotifiedCount = vehicle.students ? vehicle.students.length : 0;
+
+    let noticeTitle = '';
+    let noticeContent = '';
+
+    if (eventType === 'REACHED_SCHOOL') {
+      noticeTitle = `🚌 Transport Alert: ${busLabel} Reached School`;
+      noticeContent = `Dear Parents, school ${busLabel} on route "${vehicle.route}" has safely reached the school.`;
+    } else {
+      noticeTitle = `🚌 Transport Alert: ${busLabel} Departed from School`;
+      noticeContent = `Dear Parents, school ${busLabel} on route "${vehicle.route}" has started its evening return trip from school.`;
+    }
+
+    // Save transport log entry
+    const logEntry = new TransportLogModel({
+      transport: vehicle._id,
+      busNumber: vehicle.busNumber,
+      vehicleNumber: vehicle.vehicleNumber,
+      route: vehicle.route,
+      eventType,
+      timestamp: new Date(),
+      triggeredBy: (req as any).user?.id || (req as any).user?._id,
+      studentsNotifiedCount,
+      notes: notes || undefined
+    });
+    await logEntry.save();
+
+    // Create a Notice for Parents
+    try {
+      const notice = new NoticeModel({
+        title: noticeTitle,
+        content: noticeContent,
+        targetAudience: 'Parents',
+        date: new Date(),
+        postedBy: (req as any).user?.id || (req as any).user?._id
+      });
+      await notice.save();
+    } catch (e) {
+      console.error('Failed to create parent notice for transport event:', e);
+    }
+
+    const populatedLog = await TransportLogModel.findById(logEntry._id)
+      .populate('triggeredBy', 'name email role')
+      .populate('transport');
+
+    res.status(201).json({
+      message: `Notification sent for ${busLabel}`,
+      log: populatedLog
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const getTransportLogs = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const logs = await TransportLogModel.find()
+      .populate('triggeredBy', 'name email role')
+      .populate('transport')
+      .sort({ createdAt: -1 })
+      .limit(100);
+    res.json(logs);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+

@@ -1,3 +1,7 @@
+import dns from 'dns';
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {}
 import app from './src/app';
 import mongoose from 'mongoose';
 import http from 'http';
@@ -57,7 +61,7 @@ const seedAdmin = async () => {
   }
 };
 
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, { tlsAllowInvalidCertificates: true })
   .then(async () => {
     console.log('Connected to MongoDB');
     await seedAdmin();

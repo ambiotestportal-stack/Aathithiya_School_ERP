@@ -1,10 +1,11 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '@/lib/axios';
 import { 
   LayoutDashboard, Users, BookOpen, UserCheck, 
   Wallet, FileText, CalendarCheck, Bus, Library, 
@@ -87,6 +88,24 @@ export const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (va
   const pathname = usePathname();
   const router = useRouter();
 
+  const [logoUrl, setLogoUrl] = useState<string>('');
+  const [schoolName, setSchoolName] = useState<string>('');
+
+  const fetchSettings = () => {
+    api.get('/api/settings').then((res) => {
+      if (res.data) {
+        if (res.data.logoUrl !== undefined) setLogoUrl(res.data.logoUrl || '');
+        if (res.data.schoolName) setSchoolName(res.data.schoolName);
+      }
+    }).catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchSettings();
+    window.addEventListener('school-settings-updated', fetchSettings);
+    return () => window.removeEventListener('school-settings-updated', fetchSettings);
+  }, []);
+
   const handleLogout = () => {
     logout();
     document.cookie = 'token=; Max-Age=0; path=/';
@@ -130,16 +149,25 @@ export const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (va
         }`}
       >
         <div className="flex items-center justify-between px-6 h-20 flex-shrink-0 border-b border-slate-800/80">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 border border-indigo-400/30">
-              <GraduationCap className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-indigo-200 to-white">EduERP</h1>
+          <div className="flex items-center gap-3 min-w-0">
+            {logoUrl ? (
+              <div className="w-11 h-11 rounded-2xl bg-white p-1 flex items-center justify-center shadow-lg shadow-indigo-500/30 border border-indigo-400/30 shrink-0 overflow-hidden">
+                <img src={logoUrl} alt="School Logo" className="w-full h-full object-contain" />
+              </div>
+            ) : (
+              <div className="w-11 h-11 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 border border-indigo-400/30 shrink-0">
+                <GraduationCap className="w-6 h-6 text-white" />
+              </div>
+            )}
+            <div className="min-w-0 truncate">
+              <h1 className="text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-indigo-200 to-white truncate">
+                {schoolName || 'EduERP'}
+              </h1>
               <p className="text-[10px] uppercase tracking-widest font-semibold text-indigo-400/90">School Portal</p>
             </div>
           </div>
         </div>
+
         
         <nav className="flex-1 overflow-y-auto px-4 py-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <div className="mb-4 px-3 flex items-center justify-between">
