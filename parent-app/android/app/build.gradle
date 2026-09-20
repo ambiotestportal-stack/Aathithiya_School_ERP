@@ -40,6 +40,7 @@ dependencies {
     implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "com.facebook.react:react-native:0.72.6"
     implementation "com.facebook.react:react-android:0.72.6"
+    implementation "org.webkit:android-jsc:r250231"
     implementation "com.facebook.fresco:fbcore:2.5.0"
     implementation "com.facebook.soloader:soloader:0.10.5"
 }
