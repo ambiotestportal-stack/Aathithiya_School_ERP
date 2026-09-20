@@ -2,8 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// Live Vercel Cloud Backend URL
-export const BASE_URL = 'https://backend-tau-five-47.vercel.app';
+// Live Vercel Cloud Backend URL (Connected to GitHub)
+export const BASE_URL = 'https://aathithiya-school-erp.vercel.app';
 
 const api = axios.create({
   baseURL: BASE_URL,

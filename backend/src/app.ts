@@ -22,6 +22,15 @@ app.use(express.urlencoded({ limit: '2mb', extended: true }));
 
 
 
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Aathithiya School ERP API',
+    status: 'online',
+    version: '1.0.0',
+    health: '/api/health'
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() });
 });
