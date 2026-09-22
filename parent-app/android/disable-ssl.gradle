@@ -1,0 +1,9 @@
+allprojects {
+    repositories {
+        all { ArtifactRepository repo ->
+            if (repo instanceof MavenArtifactRepository) {
+                repo.allowInsecureProtocol = true
+            }
+        }
+    }
+}

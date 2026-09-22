@@ -88,40 +88,37 @@ export const RootNavigator = () => {
       {/* Top Application Header */}
       <View style={styles.appHeader}>
         <View style={styles.headerLeft}>
-          <View style={styles.schoolBadge}>
-            <Text style={styles.schoolBadgeIcon}>🏫</Text>
-          </View>
-          <View>
-            <Text style={styles.schoolTitle}>AATHITHIYA</Text>
-            <Text style={styles.schoolSubtitle}>INTERNATIONAL PUBLIC SCHOOL</Text>
-          </View>
-        </View>
-
-        <View style={styles.headerRight}>
-          {/* Active Child Quick Badge */}
-          {childList && childList.length > 1 && (
-            <TouchableOpacity
-              style={styles.childPill}
-              onPress={() => setMenuVisible(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.childPillEmoji}>👦</Text>
-              <Text style={styles.childPillText} numberOfLines={1}>
-                {currentChildName.split(' ')[0]}
-              </Text>
-              <Text style={styles.childPillArrow}>▾</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Hamburger Menu Button */}
+          {/* Professional Hamburger Menu Button on TOP-LEFT */}
           <TouchableOpacity
-            style={styles.menuButton}
+            style={styles.menuButtonLeft}
             onPress={() => setMenuVisible(true)}
             activeOpacity={0.7}
           >
             <View style={styles.menuBar} />
             <View style={[styles.menuBar, { width: 14 }]} />
             <View style={styles.menuBar} />
+          </TouchableOpacity>
+
+          <View style={styles.schoolTitleContainer}>
+            <Text style={styles.schoolTitle}>AATHITHIYA</Text>
+            <Text style={styles.schoolSubtitle}>INTERNATIONAL PUBLIC SCHOOL</Text>
+          </View>
+        </View>
+
+        <View style={styles.headerRight}>
+          {/* Active Child Selector Pill */}
+          <TouchableOpacity
+            style={styles.childPill}
+            onPress={() => setMenuVisible(true)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.childAvatarDot}>
+              <Text style={styles.childAvatarInitial}>{currentChildName.charAt(0)}</Text>
+            </View>
+            <Text style={styles.childPillText} numberOfLines={1}>
+              {currentChildName.split(' ')[0]}
+            </Text>
+            <Text style={styles.childPillArrow}>▾</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -335,17 +332,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  schoolBadge: {
+  menuButtonLeft: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    backgroundColor: '#2563EB',
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 9,
     marginRight: 10,
   },
-  schoolBadgeIcon: {
-    fontSize: 20,
+  schoolTitleContainer: {
+    justifyContent: 'center',
   },
   schoolTitle: {
     color: '#FFFFFF',
@@ -370,31 +368,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
-    marginRight: 10,
   },
-  childPillEmoji: {
-    fontSize: 12,
-    marginRight: 4,
+  childAvatarDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  childAvatarInitial: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
   },
   childPillText: {
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
-    maxWidth: 80,
+    maxWidth: 90,
   },
   childPillArrow: {
     color: '#BFDBFE',
     fontSize: 12,
     marginLeft: 4,
-  },
-  menuButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 9,
   },
   menuBar: {
     width: 18,
