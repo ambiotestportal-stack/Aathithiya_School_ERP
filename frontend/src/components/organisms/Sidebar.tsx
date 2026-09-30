@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Users, BookOpen, UserCheck, 
   Wallet, FileText, CalendarCheck, Bus, Library, 
   Home, MessageSquare, Settings, CheckSquare,
-  Award, Briefcase, GraduationCap, LogOut, History
+  Award, Briefcase, GraduationCap, LogOut, History, Package, Ticket
 } from 'lucide-react';
 
 // ... (keep the same menu arrays)
@@ -35,8 +35,12 @@ const adminMenu: SidebarItem[] = [
   { name: 'Examination', href: '/admin/exam', icon: FileText },
   { name: 'Attendance', href: '/admin/attendance', icon: UserCheck },
   { name: 'Announcements', href: '/admin/communication', icon: MessageSquare },
+  { name: 'Circular', href: '/admin/circular', icon: FileText },
+  { name: 'Gate Pass', href: '/admin/gate-pass', icon: Ticket },
+  { name: 'Visitor Module', href: '/admin/visitor', icon: Users },
   { name: 'Transport', href: '/admin/transport', icon: Bus },
   { name: 'Hostel', href: '/admin/hostel', icon: Home },
+  { name: 'Stock Management', href: '/admin/stock', icon: Package },
   { name: 'Reports', href: '/admin/reports', icon: FileText },
   { name: 'Recovery / Trash', href: '/admin/recovery', icon: History },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
@@ -144,78 +148,92 @@ export const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (va
       
       {/* Sidebar */}
       <div 
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900/95 dark:bg-slate-900/95 backdrop-blur-xl text-slate-100 shadow-2xl border-r border-slate-800/80 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col h-full ${
+        className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-[#F8F6FC] text-slate-700 shadow-xl lg:shadow-none border-r border-white/50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col h-full ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between px-6 h-20 flex-shrink-0 border-b border-slate-800/80">
+        <div className="flex items-center justify-between px-6 h-20 flex-shrink-0 bg-white">
           <div className="flex items-center gap-3 min-w-0">
             {logoUrl ? (
-              <div className="w-11 h-11 rounded-2xl bg-white p-1 flex items-center justify-center shadow-lg shadow-indigo-500/30 border border-indigo-400/30 shrink-0 overflow-hidden">
+              <div className="w-11 h-11 bg-white flex items-center justify-center shrink-0 overflow-hidden">
                 <img src={logoUrl} alt="School Logo" className="w-full h-full object-contain" />
               </div>
             ) : (
-              <div className="w-11 h-11 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 border border-indigo-400/30 shrink-0">
+              <div className="w-11 h-11 bg-[#9352F3] rounded-xl flex items-center justify-center shadow-md shadow-purple-500/20 shrink-0">
                 <GraduationCap className="w-6 h-6 text-white" />
               </div>
             )}
             <div className="min-w-0 truncate">
-              <h1 className="text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-indigo-200 to-white truncate">
+              <h1 className="text-base font-bold text-slate-800 truncate">
                 {schoolName || 'EduERP'}
               </h1>
-              <p className="text-[10px] uppercase tracking-widest font-semibold text-indigo-400/90">School Portal</p>
+              <p className="text-[10px] uppercase tracking-widest font-semibold text-purple-600">School Portal</p>
             </div>
           </div>
         </div>
 
         
-        <nav className="flex-1 overflow-y-auto px-4 py-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <nav className="flex-1 overflow-y-auto px-4 py-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-purple-200/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-purple-300">
           <div className="mb-4 px-3 flex items-center justify-between">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Navigation</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Menu</p>
             {user?.role && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#9352F3] shadow-sm">
                 {user.role}
               </span>
             )}
           </div>
-          <ul className="space-y-1.5">
+          <ul className="space-y-1.5 relative">
             {menuItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
-                <li key={item.name}>
-                  <Link 
-                    href={item.href}
-                    className={`flex items-center px-4 py-3 rounded-2xl transition-all duration-200 group relative ${
-                      isActive 
-                        ? 'bg-indigo-600/15 text-indigo-300 font-semibold shadow-inner border border-indigo-500/20' 
-                        : 'hover:bg-slate-800/60 text-slate-400 hover:text-slate-200'
-                    }`}
-                    onClick={() => setIsOpen(false)}
+                <li key={item.name} className="relative">
+                  {isActive && (
+                    <motion.div
+                      layoutId="active-sidebar-bg"
+                      className="absolute inset-0 bg-white shadow-[0_2px_10px_rgba(147,82,243,0.08)] rounded-xl"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <motion.div
+                    whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2, z: 10 }}
+                    whileTap={{ scale: 0.96 }}
+                    style={{ perspective: 1000, transformStyle: "preserve-3d" }}
+                    className="relative z-10"
                   >
-                    {isActive && (
-                      <motion.div 
-                        layoutId="sidebar-active"
-                        className="absolute left-0 top-2 bottom-2 w-1.5 bg-gradient-to-b from-indigo-400 to-indigo-600 rounded-r-full shadow-lg shadow-indigo-500/50"
-                      />
-                    )}
-                    <item.icon className={`w-5 h-5 mr-3 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                    <span className="text-sm font-medium">{item.name}</span>
-                  </Link>
+                    <Link 
+                      href={item.href}
+                      className={`flex items-center px-4 py-3 rounded-xl transition-colors duration-200 group ${
+                        isActive 
+                          ? 'text-[#9352F3] font-semibold' 
+                          : 'text-[#64748B] hover:text-[#9352F3] hover:bg-white/40 font-medium'
+                      }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <item.icon className={`w-5 h-5 mr-3 transition-transform duration-200 ${isActive ? 'text-[#9352F3]' : 'text-[#8B5CF6]/70 group-hover:text-[#9352F3]'}`} />
+                      <span className="text-sm">{item.name}</span>
+                    </Link>
+                  </motion.div>
                 </li>
               );
             })}
           </ul>
         </nav>
 
-        {/* Logout Button */}
-        <div className="p-4 border-t border-slate-800/80 flex-shrink-0">
-          <button 
-            onClick={handleLogout}
-            className="flex items-center w-full px-4 py-3 rounded-2xl text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all duration-200 group cursor-pointer"
+        <div className="p-4 border-t border-purple-50 flex-shrink-0">
+          <motion.div
+            whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2, z: 10 }}
+            whileTap={{ scale: 0.96 }}
+            style={{ perspective: 1000, transformStyle: "preserve-3d" }}
           >
-            <LogOut className="w-5 h-5 mr-3 text-rose-400 group-hover:text-rose-500 group-hover:scale-110 transition-all" />
-            <span className="text-sm font-semibold group-hover:text-rose-300">Logout</span>
-          </button>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center w-full px-4 py-3 rounded-xl text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 group cursor-pointer font-medium"
+            >
+              <LogOut className="w-5 h-5 mr-3 text-slate-400 group-hover:text-rose-500 transition-colors" />
+              <span className="text-sm">Logout</span>
+            </button>
+          </motion.div>
         </div>
       </div>
     </>

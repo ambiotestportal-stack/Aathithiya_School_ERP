@@ -4,7 +4,9 @@ import React, { useState } from 'react';
 import { Input } from '../atoms/Input';
 import { Button } from '../atoms/Button';
 import { X } from 'lucide-react';
+
 import api from '@/lib/axios';
+import { Portal } from '@/components/atoms/Portal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isDateRangeValid } from '@/lib/validation';
 
@@ -59,7 +61,8 @@ export const BatchModal = ({ isOpen, onClose, onSuccess }: BatchModalProps) => {
   };
 
   return (
-    <AnimatePresence>
+    <Portal>
+      <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
           <motion.div 
@@ -94,5 +97,6 @@ export const BatchModal = ({ isOpen, onClose, onSuccess }: BatchModalProps) => {
         </div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 };

@@ -1,15 +1,18 @@
 import React from 'react';
 import { StatusBar, StyleSheet, View } from 'react-native';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import { RootNavigator } from './navigation/RootNavigator';
 
 export const App = () => {
   return (
     <AuthProvider>
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#1E293B" />
-        <RootNavigator />
-      </View>
+      <SocketProvider>
+        <View style={styles.container}>
+          <StatusBar barStyle="light-content" backgroundColor="#1E293B" />
+          <RootNavigator />
+        </View>
+      </SocketProvider>
     </AuthProvider>
   );
 };

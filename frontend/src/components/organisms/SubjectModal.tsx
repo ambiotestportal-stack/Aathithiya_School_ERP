@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '../atoms/Input';
 import { Button } from '../atoms/Button';
 import { X } from 'lucide-react';
+
 import api from '@/lib/axios';
+import { Portal } from '@/components/atoms/Portal';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SubjectModalProps {
@@ -92,7 +94,8 @@ export const SubjectModal = ({ isOpen, onClose, onSuccess, mode = 'add', initial
   const submitLabel = mode === 'edit' ? 'Update Subject' : 'Create Subject';
 
   return (
-    <AnimatePresence>
+    <Portal>
+      <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
           <motion.div 
@@ -158,5 +161,6 @@ export const SubjectModal = ({ isOpen, onClose, onSuccess, mode = 'add', initial
         </div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 };

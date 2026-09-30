@@ -5,6 +5,7 @@ import { Input } from '../atoms/Input';
 import { Button } from '../atoms/Button';
 import { X, Bus } from 'lucide-react';
 import api from '@/lib/axios';
+import { Portal } from '@/components/atoms/Portal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isValidEmail, isValidPhone, isNonNegativeNumber } from '@/lib/validation';
 
@@ -173,13 +174,14 @@ export const StudentModal = ({ isOpen, onClose, onSuccess, mode = 'add', initial
   const isReadOnly = mode === 'view';
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}
-          />
+    <Portal>
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" style={{ perspective: '2000px' }}>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}
+            />
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full relative z-10 overflow-hidden flex flex-col max-h-[90vh]"
@@ -344,5 +346,6 @@ export const StudentModal = ({ isOpen, onClose, onSuccess, mode = 'add', initial
         </div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 };

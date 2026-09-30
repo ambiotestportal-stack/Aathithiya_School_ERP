@@ -3,7 +3,10 @@
 import React, { useState } from 'react';
 import { Button } from '../atoms/Button';
 import { X, Printer, Download, CheckCircle, GraduationCap, FileText, Loader2 } from 'lucide-react';
+
+import api from '@/lib/axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Portal } from '@/components/atoms/Portal';
 import jsPDF from 'jspdf';
 
 interface InvoiceModalProps {
@@ -485,7 +488,8 @@ export const InvoiceModal = ({ isOpen, onClose, fee, transaction }: InvoiceModal
   };
 
   return (
-    <AnimatePresence>
+    <Portal>
+      <AnimatePresence>
       <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
 
@@ -673,5 +677,6 @@ export const InvoiceModal = ({ isOpen, onClose, fee, transaction }: InvoiceModal
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal>
   );
 };

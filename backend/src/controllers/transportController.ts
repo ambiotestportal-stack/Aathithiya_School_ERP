@@ -190,6 +190,9 @@ export const notifyBusStatus = async (req: Request, res: Response): Promise<void
       .populate('triggeredBy', 'name email role')
       .populate('transport');
 
+      const io = req.app.get('io');
+      if (io) io.emit('transport_log_added', populatedLog);
+
     res.status(201).json({
       message: `Notification sent for ${busLabel}`,
       log: populatedLog
@@ -211,4 +214,5 @@ export const getTransportLogs = async (req: Request, res: Response): Promise<voi
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 

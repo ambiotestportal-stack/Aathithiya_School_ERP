@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '../atoms/Input';
 import { Button } from '../atoms/Button';
 import { X, Plus, Trash2, Calendar } from 'lucide-react';
+
 import api from '@/lib/axios';
+import { Portal } from '@/components/atoms/Portal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isDateRangeValid } from '@/lib/validation';
 
@@ -125,7 +127,8 @@ export const ExamModal = ({ isOpen, onClose, onSuccess, mode = 'create', initial
   };
 
   return (
-    <AnimatePresence>
+    <Portal>
+      <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
@@ -237,5 +240,6 @@ export const ExamModal = ({ isOpen, onClose, onSuccess, mode = 'create', initial
         </div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 };

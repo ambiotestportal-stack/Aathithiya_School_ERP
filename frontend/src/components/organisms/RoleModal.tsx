@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+
 import { motion, AnimatePresence } from 'framer-motion';
+import { Portal } from '@/components/atoms/Portal';
 import { X } from 'lucide-react';
 import { Button } from '@/components/atoms/Button';
 import api from '@/lib/axios';
@@ -80,7 +82,8 @@ export const RoleModal = ({ isOpen, onClose, onSuccess, mode, initialData }: Rol
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
+    <Portal>
+      <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -113,5 +116,6 @@ export const RoleModal = ({ isOpen, onClose, onSuccess, mode, initialData }: Rol
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal>
   );
 };

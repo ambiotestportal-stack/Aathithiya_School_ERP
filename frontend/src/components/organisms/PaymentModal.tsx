@@ -7,7 +7,9 @@ import {
   X, CheckCircle, DollarSign, CreditCard, 
   Smartphone, Banknote, Calendar, AlertCircle, Calculator, Sparkles, Hash
 } from 'lucide-react';
+
 import api from '@/lib/axios';
+import { Portal } from '@/components/atoms/Portal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isPositiveNumber, isValidDate } from '@/lib/validation';
 import { toast } from 'sonner';
@@ -122,7 +124,8 @@ export const PaymentModal = ({ isOpen, onClose, fee, onSuccess }: PaymentModalPr
   };
 
   return (
-    <AnimatePresence>
+    <Portal>
+      <AnimatePresence>
       <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-2xl shadow-2xl max-w-lg w-full relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
@@ -369,5 +372,6 @@ export const PaymentModal = ({ isOpen, onClose, fee, onSuccess }: PaymentModalPr
         </motion.div>
       </div>
     </AnimatePresence>
+    </Portal>
   );
 };

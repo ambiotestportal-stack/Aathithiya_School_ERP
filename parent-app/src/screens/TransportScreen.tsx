@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,25 +9,67 @@ import {
   StatusBar,
   Linking,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
+import api from '../config/api';
 
 export const TransportScreen = () => {
   const { selectedStudent } = useAuth();
+  const { socket } = useSocket();
 
-  const transportInfo = {
-    busNumber: 'Bus #14',
-    regNo: 'TN-38-AB-9876',
-    routeName: 'Route 14: Anna Nagar - School Express',
-    pickupPoint: 'Anna Nagar Roundtana Stop',
-    pickupTime: '07:45 AM',
-    dropPoint: 'Anna Nagar Roundtana Stop',
-    dropTime: '04:30 PM',
-    driverName: 'Mr. M. Sundaram',
-    driverPhone: '+91 9876543210',
-    helperName: 'Mr. R. Ramesh',
-    helperPhone: '+91 9876543211',
-    status: 'In Transit',
+  const [route, setRoute] = useState<any>(null);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTransportData();
+  }, [selectedStudent]);
+
+  useEffect(() => {
+    if (!socket || !route) return;
+
+    const handleLogAdded = (newLog: any) => {
+      if ((newLog.transport?._id || newLog.transport) === route._id) {
+        setLogs(prev => [newLog, ...prev]);
+      }
+    };
+
+    socket.on('transport_log_added', handleLogAdded);
+
+    return () => {
+      socket.off('transport_log_added', handleLogAdded);
+    };
+  }, [socket, route]);
+
+  const fetchTransportData = async () => {
+    if (!selectedStudent) return;
+    try {
+      setLoading(true);
+      const [transportsRes, logsRes] = await Promise.all([
+        api.get('/api/transport'),
+        api.get('/api/transport/logs')
+      ]);
+      
+      const allTransports = transportsRes.data;
+      const assignedRoute = allTransports.find((t: any) => 
+        t.students.some((s: any) => (s._id || s) === selectedStudent._id || s === selectedStudent.id)
+      );
+
+      setRoute(assignedRoute || null);
+
+      if (assignedRoute) {
+        const assignedLogs = logsRes.data.filter((log: any) => 
+          (log.transport?._id || log.transport) === assignedRoute._id
+        );
+        setLogs(assignedLogs);
+      }
+    } catch (error) {
+      console.error('Failed to fetch transport data', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCallDriver = (phone: string, name: string) => {
@@ -48,6 +90,14 @@ export const TransportScreen = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#2563EB" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1E293B" />
@@ -56,84 +106,87 @@ export const TransportScreen = () => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>School Transport</Text>
         <Text style={styles.headerSubtitle}>
-          {selectedStudent ? `${selectedStudent.name} • ${selectedStudent.busRoute}` : 'Bus Route & Tracking'}
+          {selectedStudent ? `${selectedStudent.name} • ${selectedStudent.grade}-${selectedStudent.section}` : 'Bus Route & Tracking'}
         </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Live Bus Status Card */}
-        <View style={styles.statusCard}>
-          <View style={styles.statusHeader}>
-            <View>
-              <Text style={styles.busNo}>{transportInfo.busNumber}</Text>
-              <Text style={styles.regNo}>{transportInfo.regNo}</Text>
+        {!route ? (
+          <View style={styles.noRouteCard}>
+            <Text style={styles.noRouteText}>No Transport Assigned</Text>
+            <Text style={styles.noRouteSub}>This child is not currently assigned to any school bus route.</Text>
+          </View>
+        ) : (
+          <>
+            {/* Live Bus Status Card */}
+            <View style={styles.statusCard}>
+              <View style={styles.statusHeader}>
+                <View>
+                  <Text style={styles.busNo}>{route.vehicleNumber}</Text>
+                  <Text style={styles.regNo}>Reg: {route.capacity} Seats</Text>
+                </View>
+                <View style={styles.liveBadge}>
+                  <View style={styles.pulseDot} />
+                  <Text style={styles.liveBadgeText}>
+                    {logs.length > 0 ? (logs[0].eventType === 'REACHED_SCHOOL' ? 'At School' : 'In Transit') : 'In Transit'}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.routeName}>{route.route}</Text>
             </View>
-            <View style={styles.liveBadge}>
-              <View style={styles.pulseDot} />
-              <Text style={styles.liveBadgeText}>{transportInfo.status}</Text>
+
+            {/* Live Logs */}
+            <Text style={styles.sectionTitle}>Live Tracking Logs</Text>
+            <View style={styles.scheduleContainer}>
+              {logs.length === 0 ? (
+                <Text style={styles.emptyLogText}>No tracking events yet.</Text>
+              ) : (
+                logs.map((log, index) => {
+                  const isArrival = log.eventType === 'REACHED_SCHOOL';
+                  const date = new Date(log.timestamp);
+                  return (
+                    <View key={log._id || index}>
+                      <View style={styles.logRow}>
+                        <View style={[styles.logDot, { backgroundColor: isArrival ? '#22C55E' : '#F97316' }]} />
+                        <View style={styles.logContent}>
+                          <Text style={styles.logTitle}>
+                            {isArrival ? 'Bus Reached School' : 'Bus Departed School'}
+                          </Text>
+                          <Text style={styles.logTime}>
+                            {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </Text>
+                        </View>
+                      </View>
+                      {index < logs.length - 1 && <View style={styles.logDivider} />}
+                    </View>
+                  );
+                })
+              )}
             </View>
-          </View>
 
-          <Text style={styles.routeName}>{transportInfo.routeName}</Text>
-        </View>
-
-        {/* Pickup & Drop Timings */}
-        <Text style={styles.sectionTitle}>Stop Schedule</Text>
-
-        <View style={styles.scheduleContainer}>
-          <View style={styles.scheduleBox}>
-            <Text style={styles.scheduleIcon}>🚌 Morning Pick-Up</Text>
-            <Text style={styles.stopName}>{transportInfo.pickupPoint}</Text>
-            <Text style={styles.timeText}>{transportInfo.pickupTime}</Text>
-          </View>
-
-          <View style={styles.scheduleDivider} />
-
-          <View style={styles.scheduleBox}>
-            <Text style={styles.scheduleIcon}>🏠 Evening Drop-Off</Text>
-            <Text style={styles.stopName}>{transportInfo.dropPoint}</Text>
-            <Text style={styles.timeText}>{transportInfo.dropTime}</Text>
-          </View>
-        </View>
-
-        {/* Staff Contact Cards */}
-        <Text style={styles.sectionTitle}>Bus Driver & Staff</Text>
-
-        {/* Driver Card */}
-        <View style={styles.staffCard}>
-          <View style={styles.staffAvatar}>
-            <Text style={styles.avatarText}>👴</Text>
-          </View>
-          <View style={styles.staffInfo}>
-            <Text style={styles.staffRole}>Bus Driver</Text>
-            <Text style={styles.staffName}>{transportInfo.driverName}</Text>
-            <Text style={styles.staffPhone}>{transportInfo.driverPhone}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.callBtn}
-            onPress={() => handleCallDriver(transportInfo.driverPhone, transportInfo.driverName)}
-          >
-            <Text style={styles.callBtnText}>📞 Call</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Helper Card */}
-        <View style={styles.staffCard}>
-          <View style={[styles.staffAvatar, { backgroundColor: '#F0FDF4' }]}>
-            <Text style={styles.avatarText}>🧑</Text>
-          </View>
-          <View style={styles.staffInfo}>
-            <Text style={styles.staffRole}>Bus Attendant / Helper</Text>
-            <Text style={styles.staffName}>{transportInfo.helperName}</Text>
-            <Text style={styles.staffPhone}>{transportInfo.helperPhone}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.callBtn}
-            onPress={() => handleCallDriver(transportInfo.helperPhone, transportInfo.helperName)}
-          >
-            <Text style={styles.callBtnText}>📞 Call</Text>
-          </TouchableOpacity>
-        </View>
+            {/* Staff Contact Cards */}
+            <Text style={styles.sectionTitle}>Bus Driver</Text>
+            <View style={styles.staffCard}>
+              <View style={styles.staffAvatar}>
+                <Text style={styles.avatarText}>🚌</Text>
+              </View>
+              <View style={styles.staffInfo}>
+                <Text style={styles.staffRole}>Bus Driver</Text>
+                <Text style={styles.staffName}>{route.driverName}</Text>
+                <Text style={styles.staffPhone}>{route.driverContact}</Text>
+              </View>
+              {route.driverContact && (
+                <TouchableOpacity
+                  style={styles.callBtn}
+                  onPress={() => handleCallDriver(route.driverContact, route.driverName)}
+                >
+                  <Text style={styles.callBtnText}>📞 Call</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -165,6 +218,29 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 40,
+  },
+  noRouteCard: {
+    backgroundColor: '#FFFFFF',
+    padding: 30,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  noRouteText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  noRouteSub: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 8,
   },
   statusCard: {
     backgroundColor: '#0F172A',
@@ -235,30 +311,44 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
   },
-  scheduleBox: {
-    paddingVertical: 4,
+  emptyLogText: {
+    textAlign: 'center',
+    color: '#94A3B8',
+    fontStyle: 'italic',
+    paddingVertical: 10,
   },
-  scheduleIcon: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#475569',
+  logRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
   },
-  stopName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginTop: 4,
+  logDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
   },
-  timeText: {
-    fontSize: 14,
-    color: '#2563EB',
+  logContent: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  logTitle: {
+    fontSize: 15,
     fontWeight: '600',
-    marginTop: 2,
+    color: '#1E293B',
   },
-  scheduleDivider: {
+  logTime: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  logDivider: {
     height: 1,
     backgroundColor: '#F1F5F9',
-    marginVertical: 12,
+    marginVertical: 4,
+    marginLeft: 24,
   },
   staffCard: {
     backgroundColor: '#FFFFFF',

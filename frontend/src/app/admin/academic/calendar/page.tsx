@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import { Button } from '@/components/atoms/Button';
+import { Portal } from '@/components/atoms/Portal';
 import { Calendar, Plus, Trash2, Edit } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -110,7 +111,8 @@ export default function AcademicCalendarPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <Portal>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Create Calendar Event</h2>
@@ -151,6 +153,7 @@ export default function AcademicCalendarPage() {
             </form>
           </motion.div>
         </div>
+        </Portal>
       )}
     </div>
   );

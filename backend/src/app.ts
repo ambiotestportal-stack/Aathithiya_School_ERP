@@ -17,8 +17,8 @@ app.use(compression());
 
 app.use(cors({ origin: true, credentials: true })); // Enable credentials for cookies
 app.use(cookieParser());
-app.use(express.json({ limit: '2mb' }));
-app.use(express.urlencoded({ limit: '2mb', extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 
 
@@ -82,6 +82,18 @@ app.use('/api/roles', roleRoutes);
 
 import calendarRoutes from './routes/calendarRoutes';
 app.use('/api/calendar', calendarRoutes);
+
+import stockRoutes from './routes/stockRoutes';
+app.use('/api/stock', stockRoutes);
+
+import circularRoutes from './routes/circularRoutes';
+app.use('/api/circulars', circularRoutes);
+
+import gatePassRoutes from './routes/gatePassRoutes';
+app.use('/api/gatepass', gatePassRoutes);
+
+import visitorRoutes from './routes/visitorRoutes';
+app.use('/api/visitors', visitorRoutes);
 
 import { errorHandler } from './middlewares/error.middleware';
 

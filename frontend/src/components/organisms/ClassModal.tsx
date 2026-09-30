@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '../atoms/Input';
 import { Button } from '../atoms/Button';
 import { X, Plus, Trash2 } from 'lucide-react';
+
 import api from '@/lib/axios';
+import { Portal } from '@/components/atoms/Portal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isPositiveNumber } from '@/lib/validation';
 
@@ -164,7 +166,8 @@ export const ClassModal = ({ isOpen, onClose, onSuccess, mode = 'add', initialDa
   const submitLabel = mode === 'edit' ? 'Update Class' : 'Create Class & Sections';
 
   return (
-    <AnimatePresence>
+    <Portal>
+      <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
           <motion.div 
@@ -295,5 +298,6 @@ export const ClassModal = ({ isOpen, onClose, onSuccess, mode = 'add', initialDa
         </div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 };

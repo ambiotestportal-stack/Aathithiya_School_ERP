@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '../atoms/Input';
 import { Button } from '../atoms/Button';
 import { X } from 'lucide-react';
+
 import api from '@/lib/axios';
+import { Portal } from '@/components/atoms/Portal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isValidEmail, isValidPhone, isNonNegativeNumber } from '@/lib/validation';
 
@@ -167,7 +169,8 @@ export const StaffModal = ({ isOpen, onClose, onSuccess, mode = 'add', initialDa
   const isReadOnly = mode === 'view';
 
   return (
-    <AnimatePresence>
+    <Portal>
+      <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
           <motion.div 
@@ -317,5 +320,6 @@ export const StaffModal = ({ isOpen, onClose, onSuccess, mode = 'add', initialDa
         </div>
       )}
     </AnimatePresence>
+    </Portal>
   );
 };

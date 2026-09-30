@@ -77,7 +77,7 @@ export default function AdminDashboard() {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: LayoutGridIcon },
+    { id: 'overview', label: 'Overview', icon: PieChart },
     { id: 'students', label: 'Students', icon: GraduationCap },
     { id: 'employees', label: 'Employees', icon: Briefcase },
     { id: 'fees', label: 'Fees', icon: DollarSign },
@@ -117,27 +117,33 @@ export default function AdminDashboard() {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
-              <button
+              <motion.div
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`relative flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap ${
-                  isActive
-                    ? 'text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60'
-                }`}
+                whileHover={{ scale: 1.05, rotateX: 5, rotateY: 2 }}
+                whileTap={{ scale: 0.95 }}
+                style={{ perspective: 1000 }}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTabIndicator"
-                    className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-xl shadow-md shadow-indigo-500/25"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10 flex items-center gap-2">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                  <span>{tab.label}</span>
-                </span>
-              </button>
+                <button
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`relative flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTabIndicator"
+                      className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-xl shadow-md shadow-indigo-500/25"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                    <span>{tab.label}</span>
+                  </span>
+                </button>
+              </motion.div>
             );
           })}
         </div>
@@ -172,27 +178,22 @@ export default function AdminDashboard() {
               initial="hidden"
               animate="visible"
               variants={cardVariants}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/40 p-6 shadow-xl shadow-indigo-500/5 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 flex items-center justify-between"
+              whileHover={{ scale: 1.03, rotateX: 4, rotateY: -4, z: 20 }}
+              style={{ perspective: 1000, transformStyle: "preserve-3d" }}
+              className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#3A6DFF] to-[#2B52C4] p-6 shadow-xl shadow-blue-500/30 flex flex-col justify-between"
             >
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-indigo-600" />
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 text-xs font-extrabold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                  <span>Total Students</span>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-blue-100 text-xs font-bold uppercase tracking-wider">
+                    Total Students
+                  </div>
+                  <p className="text-3xl font-black text-white tracking-tight">
+                    {(stats.totalStudents || 0).toLocaleString()}
+                  </p>
                 </div>
-                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                  {(stats.totalStudents || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-2 pt-1">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/60">
-                    <TrendingUp className="w-3 h-3 text-indigo-500" /> Live DB
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400">Enrolled</span>
+                <div className="w-12 h-12 rounded-2xl bg-white/20 text-white flex items-center justify-center backdrop-blur-sm shrink-0 border border-white/10">
+                  <GraduationCap className="w-6 h-6" />
                 </div>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
-                <GraduationCap className="w-7 h-7" />
               </div>
             </motion.div>
 
@@ -202,27 +203,22 @@ export default function AdminDashboard() {
               initial="hidden"
               animate="visible"
               variants={cardVariants}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-purple-100 dark:border-purple-900/40 p-6 shadow-xl shadow-purple-500/5 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 flex items-center justify-between"
+              whileHover={{ scale: 1.03, rotateX: 4, rotateY: -4, z: 20 }}
+              style={{ perspective: 1000, transformStyle: "preserve-3d" }}
+              className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#8E4DFB] to-[#7131D4] p-6 shadow-xl shadow-purple-500/30 flex flex-col justify-between"
             >
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-purple-600" />
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400 text-xs font-extrabold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                  <span>Total Teachers</span>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-purple-100 text-xs font-bold uppercase tracking-wider">
+                    Total Teachers
+                  </div>
+                  <p className="text-3xl font-black text-white tracking-tight">
+                    {(stats.totalTeachers || 0).toLocaleString()}
+                  </p>
                 </div>
-                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                  {(stats.totalTeachers || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-2 pt-1">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/80 text-purple-600 dark:text-purple-300 border border-purple-100 dark:border-purple-800/60">
-                    <Award className="w-3 h-3 text-purple-500" /> Active Staff
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400">Faculty</span>
+                <div className="w-12 h-12 rounded-2xl bg-white/20 text-white flex items-center justify-center backdrop-blur-sm shrink-0 border border-white/10">
+                  <Briefcase className="w-6 h-6" />
                 </div>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/30 shrink-0">
-                <Briefcase className="w-7 h-7" />
               </div>
             </motion.div>
 
@@ -232,27 +228,22 @@ export default function AdminDashboard() {
               initial="hidden"
               animate="visible"
               variants={cardVariants}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/40 p-6 shadow-xl shadow-blue-500/5 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 flex items-center justify-between"
+              whileHover={{ scale: 1.03, rotateX: 4, rotateY: -4, z: 20 }}
+              style={{ perspective: 1000, transformStyle: "preserve-3d" }}
+              className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#F59D16] to-[#D48107] p-6 shadow-xl shadow-orange-500/30 flex flex-col justify-between"
             >
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-blue-600" />
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 text-xs font-extrabold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span>Total Parents</span>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-orange-100 text-xs font-bold uppercase tracking-wider">
+                    Total Parents
+                  </div>
+                  <p className="text-3xl font-black text-white tracking-tight">
+                    {(stats.totalParents || 0).toLocaleString()}
+                  </p>
                 </div>
-                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                  {(stats.totalParents || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-2 pt-1">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-800/60">
-                    <UserCheck className="w-3 h-3 text-blue-500" /> Verified
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400">Guardians</span>
+                <div className="w-12 h-12 rounded-2xl bg-white/20 text-white flex items-center justify-center backdrop-blur-sm shrink-0 border border-white/10">
+                  <Users className="w-6 h-6" />
                 </div>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
-                <Users className="w-7 h-7" />
               </div>
             </motion.div>
 
@@ -262,27 +253,22 @@ export default function AdminDashboard() {
               initial="hidden"
               animate="visible"
               variants={cardVariants}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="relative overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900/40 p-6 shadow-xl shadow-emerald-500/5 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 flex items-center justify-between"
+              whileHover={{ scale: 1.03, rotateX: 4, rotateY: -4, z: 20 }}
+              style={{ perspective: 1000, transformStyle: "preserve-3d" }}
+              className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#20B37F] to-[#14865E] p-6 shadow-xl shadow-emerald-500/30 flex flex-col justify-between"
             >
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-emerald-600" />
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-extrabold uppercase tracking-wider">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span>Total Revenue</span>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-emerald-100 text-xs font-bold uppercase tracking-wider">
+                    Total Collection
+                  </div>
+                  <p className="text-3xl font-black text-white tracking-tight">
+                    ₹{(stats.revenue || 0).toLocaleString()}
+                  </p>
                 </div>
-                <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                  ₹{(stats.revenue || 0).toLocaleString()}
-                </p>
-                <div className="flex items-center gap-2 pt-1">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/60">
-                    <ArrowUpRight className="w-3 h-3 text-emerald-500" /> Live Realized
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400">Payments</span>
+                <div className="w-12 h-12 rounded-2xl bg-white/20 text-white flex items-center justify-center backdrop-blur-sm shrink-0 border border-white/10">
+                  <DollarSign className="w-6 h-6" />
                 </div>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0">
-                <DollarSign className="w-7 h-7" />
               </div>
             </motion.div>
           </div>

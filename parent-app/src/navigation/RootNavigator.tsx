@@ -22,8 +22,11 @@ import { AcademicScreen } from '../screens/AcademicScreen';
 import { TransportScreen } from '../screens/TransportScreen';
 import { LeaveScreen } from '../screens/LeaveScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
+import { AnnouncementsScreen } from '../screens/AnnouncementsScreen';
+import { HomeworkScreen } from '../screens/HomeworkScreen';
+import { TimetableScreen } from '../screens/TimetableScreen';
 
-export type TabName = 'Home' | 'Attendance' | 'Academic' | 'Fees' | 'Transport' | 'Leave' | 'Profile';
+export type TabName = 'Home' | 'Attendance' | 'Academic' | 'Fees' | 'Transport' | 'Leave' | 'Profile' | 'Announcements' | 'Homework' | 'Timetable';
 
 export const RootNavigator = () => {
   const { user, selectedStudent, children: childList, setSelectedStudent, logout, isLoading } = useAuth();
@@ -65,6 +68,12 @@ export const RootNavigator = () => {
         return <LeaveScreen />;
       case 'Profile':
         return <ProfileScreen />;
+      case 'Announcements':
+        return <AnnouncementsScreen />;
+      case 'Homework':
+        return <HomeworkScreen />;
+      case 'Timetable':
+        return <TimetableScreen />;
       default:
         return <DashboardScreen navigation={{ navigate: navigateTo }} />;
     }
@@ -257,6 +266,50 @@ export const RootNavigator = () => {
                     </View>
                     <Text style={styles.drawerItemArrow}>›</Text>
                   </TouchableOpacity>
+
+
+                  <TouchableOpacity
+                    style={styles.drawerItem}
+                    onPress={() => navigateTo('Announcements')}
+                  >
+                    <View style={[styles.drawerItemIconBox, { backgroundColor: '#FCE7F3' }]}>
+                      <Text style={styles.drawerItemIcon}>📢</Text>
+                    </View>
+                    <View style={styles.drawerItemTextContainer}>
+                      <Text style={styles.drawerItemTitle}>Announcements</Text>
+                      <Text style={styles.drawerItemSubtitle}>Live school notices & updates</Text>
+                    </View>
+                    <Text style={styles.drawerItemArrow}>›</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.drawerItem}
+                    onPress={() => navigateTo('Homework')}
+                  >
+                    <View style={[styles.drawerItemIconBox, { backgroundColor: '#E0E7FF' }]}>
+                      <Text style={styles.drawerItemIcon}>📝</Text>
+                    </View>
+                    <View style={styles.drawerItemTextContainer}>
+                      <Text style={styles.drawerItemTitle}>Homework</Text>
+                      <Text style={styles.drawerItemSubtitle}>Daily assignments</Text>
+                    </View>
+                    <Text style={styles.drawerItemArrow}>›</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.drawerItem}
+                    onPress={() => navigateTo('Timetable')}
+                  >
+                    <View style={[styles.drawerItemIconBox, { backgroundColor: '#ECFCCB' }]}>
+                      <Text style={styles.drawerItemIcon}>📅</Text>
+                    </View>
+                    <View style={styles.drawerItemTextContainer}>
+                      <Text style={styles.drawerItemTitle}>Timetable</Text>
+                      <Text style={styles.drawerItemSubtitle}>Weekly class schedule</Text>
+                    </View>
+                    <Text style={styles.drawerItemArrow}>›</Text>
+                  </TouchableOpacity>
+
 
                   <TouchableOpacity
                     style={styles.drawerItem}
@@ -641,3 +694,4 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 });
+
